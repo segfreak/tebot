@@ -144,12 +144,12 @@ impl CommandMetadata {
 }
 
 #[derive(Clone, Debug)]
-pub struct CommandRegistry {
+pub struct CommandDispatcher {
   pub context: Weak<Mutex<context::Context>>,
   pub command_handlers: IndexMap<String, CommandMetadata>,
 }
 
-impl CommandRegistry {
+impl CommandDispatcher {
   pub fn new(context: Weak<Mutex<context::Context>>) -> Self {
     Self {
       context: context.clone(),

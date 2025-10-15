@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-use super::command::CommandRegistry;
+use super::command::CommandDispatcher;
 use super::config::Config;
 use super::permissions::PermissionManager;
 
@@ -13,7 +13,7 @@ pub struct Context {
   pub db: Arc<Pool<SqliteConnectionManager>>,
   pub perm_mgr: Arc<Mutex<PermissionManager>>,
   pub bot: Arc<teloxide::Bot>,
-  pub cmd_reg: Arc<Mutex<CommandRegistry>>,
+  pub cmd_dp: Arc<Mutex<CommandDispatcher>>,
 }
 
 impl Context {
@@ -22,14 +22,14 @@ impl Context {
     db: Arc<Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
-    cmd_reg: Arc<Mutex<CommandRegistry>>,
+    cmd_dp: Arc<Mutex<CommandDispatcher>>,
   ) -> Self {
     Self {
       cfg: cfg,
       db: db,
       perm_mgr: perm_mgr,
       bot: bot,
-      cmd_reg: cmd_reg,
+      cmd_dp: cmd_dp,
     }
   }
 
@@ -38,8 +38,8 @@ impl Context {
     db: Arc<r2d2::Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
-    cmd_reg: Arc<Mutex<CommandRegistry>>,
+    cmd_dp: Arc<Mutex<CommandDispatcher>>,
   ) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(cfg, db, perm_mgr, bot, cmd_reg)))
+    Arc::new(Mutex::new(Self::new(cfg, db, perm_mgr, bot, cmd_dp)))
   }
 }
