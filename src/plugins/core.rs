@@ -20,6 +20,6 @@ impl plugin::Plugin for CorePlugin {
   }
 }
 
-pub fn get_plugin() -> Box<dyn plugin::Plugin> {
+pub fn get_plugin() -> plugin::PluginBox {
   Box::new(CorePlugin::new())
 }

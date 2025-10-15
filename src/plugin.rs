@@ -10,7 +10,7 @@ use super::context;
 pub type PluginBox = Box<dyn Plugin>;
 pub type PluginMap = IndexMap<String, PluginBox>;
 
-pub trait Plugin {
+pub trait Plugin: Send + Sync {
   fn name(&self) -> &str;
   fn commands(&self) -> IndexMap<String, command::CommandMetadata>;
 }

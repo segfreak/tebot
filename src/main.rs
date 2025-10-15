@@ -13,7 +13,11 @@ use context::Context;
 use permissions::PermissionManager;
 use plugin::PluginCommandDispatcher;
 
-use teloxide::{prelude::Requester, Bot};
+use teloxide::{
+  dispatching::UpdateFilterExt,
+  prelude::{Dispatcher, Message, Requester},
+  Bot,
+};
 
 use std::sync::{Arc, Weak};
 
@@ -53,9 +57,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     plug_cmd_dp.lock().unwrap().context = Arc::downgrade(&ctx);
   }
 
+  {
+    let plugins_to_register: Vec<plugin::PluginBox> = vec![plugins::core::get_plugin()];
+
+    for plugin in plugins_to_register {
+      plug_cmd_dp.lock().unwrap().register_plugin(plugin);
+    }
+  }
+
   let me = bot.get_me().await?;
   log::info!("logged in as {} [ id: {} ]", me.full_name(), me.id);
   log::trace!("context dump:\n{:#?}", ctx);
+
+  let handler = teloxide::prelude::Update::filter_message().endpoint({
+    let dp = cmd_dp.clone();
+    let pdp = plug_cmd_dp.clone();
+
+    move |msg: Message, bot: Bot| {
+      let dp = dp.clone();
+      let pdp = pdp.clone();
+
+      async move {
+        {
+          let dp_guard = dp.lock().unwrap();
+          dp_guard.handle_message(bot.clone(), msg.clone()).await;
+        }
+
+        {
+          let pdp_guard = pdp.lock().unwrap();
+          pdp_guard.handle_message(bot, msg).await;
+        }
+
+        Ok::<(), teloxide::RequestError>(())
+      }
+    }
+  });
+
+  Dispatcher::builder(bot.clone(), handler)
+    .build()
+    .dispatch()
+    .await;
 
   Ok(())
 }
