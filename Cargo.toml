@@ -1,10 +1,12 @@
 [package]
 name = "tebot"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 
 [dependencies]
 bitflags = { version = "2.9.4", features = ["serde"] }
+indexmap = "2.11.4"
+log = "0.4.28"
 r2d2 = "0.8.10"
 r2d2_sqlite = "0.31.0"
 rusqlite = { version = "0.37.0", features = ["bundled"] }

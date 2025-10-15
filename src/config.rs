@@ -22,7 +22,7 @@ impl Config {
     &self.token
   }
 
-  pub fn get_prefix(&self) -> &Vec<char> {
-    &self.prefixes
+  pub fn get_prefixes(&self) -> Vec<char> {
+    self.prefixes.clone()
   }
 }
