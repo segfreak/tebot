@@ -17,4 +17,12 @@ impl Config {
   pub fn new_arc_mutex(token: String, prefixes: Vec<char>) -> Arc<Mutex<Self>> {
     Arc::new(Mutex::new(Self::new(token, prefixes)))
   }
+
+  pub fn get_token(&self) -> &str {
+    &self.token
+  }
+
+  pub fn get_prefix(&self) -> &Vec<char> {
+    &self.prefixes
+  }
 }
