@@ -1,12 +1,25 @@
 use std::sync::{Arc, Mutex};
 
-#[derive(Debug)]
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
   pub token: String,
   pub prefixes: Vec<char>,
 }
 
 impl Config {
+  pub fn default() -> Self {
+    Self {
+      token: String::new(),
+      prefixes: vec!['/'],
+    }
+  }
+
+  pub fn default_arc_mutex() -> Arc<Mutex<Self>> {
+    Arc::new(Mutex::new(Self::default()))
+  }
+
   pub fn new(token: String, prefixes: Vec<char>) -> Self {
     Self {
       token: token,
