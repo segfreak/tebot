@@ -11,6 +11,7 @@ use command::CommandDispatcher;
 use config::Config;
 use context::Context;
 use permissions::PermissionManager;
+use plugin::PluginCommandDispatcher;
 
 use teloxide::{prelude::Requester, Bot};
 
@@ -31,17 +32,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let pool = Arc::new(Pool::new(_conn_mgr).unwrap());
   let perm_mgr = PermissionManager::new_arc_mutex(pool.clone());
   let bot = Arc::new(Bot::new(cfg.lock().unwrap().get_token()));
+
   let cmd_dp = CommandDispatcher::new_arc_mutex(Weak::new());
+  let plug_cmd_dp = PluginCommandDispatcher::new_arc_mutex(Weak::new());
+
   let ctx = Context::new_arc_mutex(
     cfg.clone(),
     pool.clone(),
     perm_mgr.clone(),
     bot.clone(),
     cmd_dp.clone(),
+    plug_cmd_dp.clone(),
   );
 
   {
     cmd_dp.lock().unwrap().context = Arc::downgrade(&ctx);
+  }
+
+  {
+    plug_cmd_dp.lock().unwrap().context = Arc::downgrade(&ctx);
   }
 
   let me = bot.get_me().await?;
