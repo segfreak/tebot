@@ -5,6 +5,8 @@ pub mod env;
 pub mod permissions;
 pub mod plugin;
 
+pub mod plugins;
+
 use command::CommandDispatcher;
 use config::Config;
 use context::Context;
@@ -44,7 +46,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let me = bot.get_me().await?;
   log::info!("logged in as {} [ id: {} ]", me.full_name(), me.id);
-
   log::trace!("context dump:\n{:#?}", ctx);
 
   Ok(())
