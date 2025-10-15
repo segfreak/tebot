@@ -1,0 +1,39 @@
+# Use spaces for indentation
+hard_tabs = false
+tab_spaces = 2
+
+# Maximum line width
+max_width = 100
+
+# Keep imports grouped and ordered
+reorder_imports = true
+
+# Keep trailing commas in multi-line lists
+trailing_comma = "Always"
+
+# Function arguments and struct literals should expand for readability
+fn_args_layout = "Vertical"
+struct_lit_multiline_style = "ForceMulti"
+
+# Control async/await and closure formatting
+chain_indent = 2
+
+# Keep match arms on separate lines for readability
+match_arm_blocks = true
+
+# Preserve more blank lines for clarity
+blank_lines_upper_bound = 2
+blank_lines_lower_bound = 1
+
+# Format comments
+format_comments = true
+comment_width = 80
+
+# Where clauses should be multiline for readability
+where_style = "MultiLine"
+
+# Enum discriminants should be aligned vertically
+enum_discrim_align = true
+
+# Opening braces on the same line for functions, structs, impls, enums
+brace_style = "PreferSameLine"
