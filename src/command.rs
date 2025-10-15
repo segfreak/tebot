@@ -1,6 +1,7 @@
 use std::sync::Weak;
 use std::sync::{Arc, Mutex};
 
+use derivative::Derivative;
 use indexmap::IndexMap;
 
 use super::context;
@@ -111,7 +112,8 @@ impl ArgMetadata {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Derivative)]
+#[derivative(Debug)]
 pub struct CommandMetadata {
   pub perm: permissions::Permission,
   pub desc: String,
@@ -119,6 +121,7 @@ pub struct CommandMetadata {
   pub reply: ReplyRequirement,
   pub args: Vec<ArgMetadata>,
 
+  #[derivative(Debug = "ignore")]
   pub handler: CommandHandler,
 }
 
@@ -140,7 +143,7 @@ impl CommandMetadata {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct CommandRegistry {
   pub context: Weak<Mutex<context::Context>>,
   pub command_handlers: IndexMap<String, CommandMetadata>,

@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 bitflags = { version = "2.9.4", features = ["serde"] }
+derivative = "2.2.0"
+env_logger = "0.11.8"
 indexmap = "2.11.4"
 log = "0.4.28"
 r2d2 = "0.8.10"

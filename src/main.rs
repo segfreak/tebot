@@ -8,14 +8,17 @@ use config::Config;
 use context::Context;
 use permissions::PermissionManager;
 
-use teloxide::Bot;
+use teloxide::{prelude::Requester, Bot};
 
 use std::sync::{Arc, Weak};
 
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+  env_logger::init();
+
   let cfg = Config::new_arc_mutex("token".to_string(), vec!['!', '/']);
   let _conn_mgr = SqliteConnectionManager::file("database.db");
   let pool = Arc::new(Pool::new(_conn_mgr).unwrap());
@@ -34,5 +37,10 @@ fn main() {
     cmd_reg.lock().unwrap().context = Arc::downgrade(&ctx);
   }
 
-  // println!("{:#?}", ctx);
+  let me = bot.get_me().await?;
+  log::info!("logged in as {} [ id: {} ]", me.full_name(), me.id);
+
+  println!("{:#?}", ctx);
+
+  Ok(())
 }

@@ -7,6 +7,7 @@ use super::command::CommandRegistry;
 use super::config::Config;
 use super::permissions::PermissionManager;
 
+#[derive(Debug)]
 pub struct Context {
   pub cfg: Arc<Mutex<Config>>,
   pub db: Arc<Pool<SqliteConnectionManager>>,
