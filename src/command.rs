@@ -157,8 +157,8 @@ impl CommandDispatcher {
     }
   }
 
-  pub fn new_arc_mutex(context: Weak<Mutex<context::Context>>) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(context)))
+  pub fn new_arc_mutex(context: Weak<Mutex<context::Context>>) -> Arc<tokio::sync::Mutex<Self>> {
+    Arc::new(tokio::sync::Mutex::new(Self::new(context)))
   }
 
   pub fn register_command_handler(&mut self, name: &str, meta: CommandMetadata) {

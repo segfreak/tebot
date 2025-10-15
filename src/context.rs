@@ -15,8 +15,8 @@ pub struct Context {
   pub perm_mgr: Arc<Mutex<PermissionManager>>,
   pub bot: Arc<teloxide::Bot>,
 
-  pub cmd_dp: Arc<Mutex<CommandDispatcher>>,
-  pub plug_cmd_dp: Arc<Mutex<PluginCommandDispatcher>>,
+  pub cmd_dp: Arc<tokio::sync::Mutex<CommandDispatcher>>,
+  pub plug_cmd_dp: Arc<tokio::sync::Mutex<PluginCommandDispatcher>>,
 }
 
 impl Context {
@@ -25,8 +25,8 @@ impl Context {
     db: Arc<Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
-    cmd_dp: Arc<Mutex<CommandDispatcher>>,
-    plug_cmd_dp: Arc<Mutex<PluginCommandDispatcher>>,
+    cmd_dp: Arc<tokio::sync::Mutex<CommandDispatcher>>,
+    plug_cmd_dp: Arc<tokio::sync::Mutex<PluginCommandDispatcher>>,
   ) -> Self {
     Self {
       cfg: cfg,
@@ -43,8 +43,8 @@ impl Context {
     db: Arc<r2d2::Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
-    cmd_dp: Arc<Mutex<CommandDispatcher>>,
-    plug_cmd_dp: Arc<Mutex<PluginCommandDispatcher>>,
+    cmd_dp: Arc<tokio::sync::Mutex<CommandDispatcher>>,
+    plug_cmd_dp: Arc<tokio::sync::Mutex<PluginCommandDispatcher>>,
   ) -> Arc<Mutex<Self>> {
     Arc::new(Mutex::new(Self::new(
       cfg,

@@ -34,8 +34,10 @@ impl PluginCommandDispatcher {
     }
   }
 
-  pub fn new_arc_mutex(context: Weak<Mutex<super::context::Context>>) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(context)))
+  pub fn new_arc_mutex(
+    context: Weak<Mutex<super::context::Context>>,
+  ) -> Arc<tokio::sync::Mutex<Self>> {
+    Arc::new(tokio::sync::Mutex::new(Self::new(context)))
   }
 
   pub fn register_plugin(&mut self, plugin: PluginBox) {

@@ -50,18 +50,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   );
 
   {
-    cmd_dp.lock().unwrap().context = Arc::downgrade(&ctx);
+    cmd_dp.lock().await.context = Arc::downgrade(&ctx);
   }
 
   {
-    plug_cmd_dp.lock().unwrap().context = Arc::downgrade(&ctx);
+    plug_cmd_dp.lock().await.context = Arc::downgrade(&ctx);
   }
 
   {
     let plugins_to_register: Vec<plugin::PluginBox> = vec![plugins::core::get_plugin()];
 
     for plugin in plugins_to_register {
-      plug_cmd_dp.lock().unwrap().register_plugin(plugin);
+      plug_cmd_dp.lock().await.register_plugin(plugin);
     }
   }
 
@@ -73,20 +73,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let dp = cmd_dp.clone();
     let pdp = plug_cmd_dp.clone();
 
-    move |msg: Message, bot: Bot| {
+    move |msg: Message, bot: Arc<Bot>| {
       let dp = dp.clone();
       let pdp = pdp.clone();
 
       async move {
-        {
-          let dp_guard = dp.lock().unwrap();
-          dp_guard.handle_message(bot.clone(), msg.clone()).await;
-        }
-
-        {
-          let pdp_guard = pdp.lock().unwrap();
-          pdp_guard.handle_message(bot, msg).await;
-        }
+        dp.lock()
+          .await
+          .handle_message((*bot).clone(), msg.clone())
+          .await;
+        pdp.lock().await.handle_message((*bot).clone(), msg).await;
 
         Ok::<(), teloxide::RequestError>(())
       }
