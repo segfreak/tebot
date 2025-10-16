@@ -82,7 +82,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   }
 
   let me = bot.get_me().await?;
-  log::debug!("bot logged in as {} [id: {}]", me.full_name(), me.id);
+  log::info!("bot logged in as {} [id: {}]", me.full_name(), me.id);
 
   let handler = dptree::entry().endpoint({
     let dp = dp.clone();
