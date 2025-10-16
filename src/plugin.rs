@@ -42,12 +42,20 @@ impl PluginCommandDispatcher {
 
   pub fn register_plugin(&mut self, plugin: PluginBox) {
     let plugin_name = plugin.name().to_string();
+    log::info!("[{}] loading ...", plugin_name);
 
     for (cmd_name, meta) in plugin.commands() {
+      log::info!(
+        "[{}] command: {:<15}",
+        plugin_name.clone(),
+        cmd_name.clone()
+      );
+
       self.command_handlers.insert(cmd_name, meta);
     }
 
-    self.plugins.insert(plugin_name, plugin);
+    self.plugins.insert(plugin_name.clone(), plugin);
+    log::info!("[{}] loaded", plugin_name);
   }
 
   pub async fn handle_command(
@@ -66,7 +74,7 @@ impl PluginCommandDispatcher {
         let ctx = ctx.lock().unwrap();
         let cfg = ctx.cfg.lock().unwrap();
         let pm = ctx.perm_mgr.lock().unwrap();
-        if pm.has(user_id, info.perm) {
+        if pm.can(user_id, info.perm) {
           drop(cfg);
           (info.handler)(bot.clone(), msg.clone(), cmd, self.context.clone());
         }

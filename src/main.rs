@@ -26,6 +26,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 
 use dotenvy::dotenv;
 
+use crate::permissions::Permission;
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
   dotenv().ok();
@@ -48,6 +50,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     cmd_dp.clone(),
     plug_cmd_dp.clone(),
   );
+
+  {
+    perm_mgr
+      .lock()
+      .unwrap()
+      .set(teloxide::prelude::UserId(6737206665), Permission::OWNER);
+  }
 
   {
     cmd_dp.lock().await.context = Arc::downgrade(&ctx);
@@ -78,12 +87,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       let pdp = pdp.clone();
 
       async move {
+        log::debug!("handling new message {} [at {}]", msg.id, msg.chat.id);
         dp.lock()
           .await
           .handle_message((*bot).clone(), msg.clone())
           .await;
         pdp.lock().await.handle_message((*bot).clone(), msg).await;
-
         Ok::<(), teloxide::RequestError>(())
       }
     }

@@ -182,7 +182,7 @@ impl CommandDispatcher {
           let ctx = ctx.lock().unwrap();
           let cfg = ctx.cfg.lock().unwrap();
           let pm = ctx.perm_mgr.lock().unwrap();
-          if pm.has(user_id, info.perm) {
+          if pm.can(user_id, info.perm) {
             drop(cfg);
             (info.handler)(bot.clone(), msg.clone(), cmd, self.context.clone());
           }

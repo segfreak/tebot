@@ -99,4 +99,12 @@ impl PermissionManager {
   pub fn has(&self, user_id: UserId, perm: Permission) -> bool {
     self.get(user_id).contains(perm)
   }
+
+  pub fn can(&self, user_id: UserId, perm: Permission) -> bool {
+    let _can = self.get(user_id).level() >= perm.level();
+
+    log::debug!("{} can access to {:?}: {}", user_id, perm, _can);
+
+    _can
+  }
 }
