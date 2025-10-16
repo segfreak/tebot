@@ -45,7 +45,7 @@ impl plugin::Plugin for CorePlugin {
     cmds
   }
 
-  fn update_handlers(&self) -> Vec<crate::command::UpdateHandler> {
+  fn update_handlers(&self) -> Vec<crate::handler::UpdateHandler> {
     Vec::new()
   }
 }

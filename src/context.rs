@@ -3,10 +3,9 @@ use std::sync::{Arc, Mutex};
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-use super::command::CommandDispatcher;
 use super::config::Config;
+use super::dispatcher::Dispatcher;
 use super::permissions::PermissionManager;
-use super::plugin::PluginCommandDispatcher;
 
 #[derive(Debug)]
 pub struct Context {
@@ -15,8 +14,7 @@ pub struct Context {
   pub perm_mgr: Arc<Mutex<PermissionManager>>,
   pub bot: Arc<teloxide::Bot>,
 
-  pub cmd_dp: Arc<tokio::sync::Mutex<CommandDispatcher>>,
-  pub plug_cmd_dp: Arc<tokio::sync::Mutex<PluginCommandDispatcher>>,
+  pub dp: Arc<tokio::sync::Mutex<Dispatcher>>,
 }
 
 impl Context {
@@ -25,16 +23,14 @@ impl Context {
     db: Arc<Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
-    cmd_dp: Arc<tokio::sync::Mutex<CommandDispatcher>>,
-    plug_cmd_dp: Arc<tokio::sync::Mutex<PluginCommandDispatcher>>,
+    dp: Arc<tokio::sync::Mutex<Dispatcher>>,
   ) -> Self {
     Self {
       cfg: cfg,
       db: db,
       perm_mgr: perm_mgr,
       bot: bot,
-      cmd_dp: cmd_dp,
-      plug_cmd_dp: plug_cmd_dp,
+      dp: dp,
     }
   }
 
@@ -43,16 +39,8 @@ impl Context {
     db: Arc<r2d2::Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
-    cmd_dp: Arc<tokio::sync::Mutex<CommandDispatcher>>,
-    plug_cmd_dp: Arc<tokio::sync::Mutex<PluginCommandDispatcher>>,
+    dp: Arc<tokio::sync::Mutex<Dispatcher>>,
   ) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(
-      cfg,
-      db,
-      perm_mgr,
-      bot,
-      cmd_dp,
-      plug_cmd_dp,
-    )))
+    Arc::new(Mutex::new(Self::new(cfg, db, perm_mgr, bot, dp)))
   }
 }

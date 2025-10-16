@@ -1,28 +1,7 @@
-use std::pin::Pin;
-use std::sync::Weak;
-use std::sync::{Arc, Mutex};
-
 use derivative::Derivative;
-use indexmap::IndexMap;
 
-use super::context;
+use super::handler;
 use super::permissions;
-
-pub type CommandHandler = Arc<
-  dyn Fn(teloxide::Bot, teloxide::prelude::Message, Command, Weak<Mutex<context::Context>>)
-    + Send
-    + Sync,
->;
-
-pub type UpdateHandler = Arc<
-  dyn Fn(
-      teloxide::Bot,
-      teloxide::prelude::Update,
-      Weak<tokio::sync::Mutex<context::Context>>,
-    ) -> Pin<Box<dyn Future<Output = ()> + Send>>
-    + Send
-    + Sync,
->;
 
 pub struct Command {
   pub prefix: char,
@@ -133,7 +112,7 @@ pub struct CommandMetadata {
   pub args: Vec<ArgMetadata>,
 
   #[derivative(Debug = "ignore")]
-  pub handler: CommandHandler,
+  pub handler: handler::CommandHandler,
 }
 
 impl CommandMetadata {
@@ -142,7 +121,7 @@ impl CommandMetadata {
     desc: String,
     reply: ReplyRequirement,
     args: Vec<ArgMetadata>,
-    handler: CommandHandler,
+    handler: handler::CommandHandler,
   ) -> Self {
     Self {
       perm: perm,
@@ -151,77 +130,5 @@ impl CommandMetadata {
       args: args,
       handler: handler,
     }
-  }
-}
-
-#[derive(Clone, Debug)]
-pub struct CommandDispatcher {
-  pub context: Weak<Mutex<context::Context>>,
-  pub command_handlers: IndexMap<String, CommandMetadata>,
-}
-
-impl CommandDispatcher {
-  pub fn new(context: Weak<Mutex<context::Context>>) -> Self {
-    Self {
-      context: context.clone(),
-      command_handlers: IndexMap::new(),
-    }
-  }
-
-  pub fn new_arc_mutex(context: Weak<Mutex<context::Context>>) -> Arc<tokio::sync::Mutex<Self>> {
-    Arc::new(tokio::sync::Mutex::new(Self::new(context)))
-  }
-
-  #[deprecated]
-  pub fn register_command_handler(&mut self, name: &str, meta: CommandMetadata) {
-    log::warn!("deprecated");
-    self.command_handlers.insert(name.to_string(), meta);
-  }
-
-  pub async fn handle_command(
-    &self,
-    bot: teloxide::Bot,
-    msg: teloxide::prelude::Message,
-    cmd: Command,
-  ) {
-    let user_id = match &msg.from {
-      Some(user) => user.id,
-      None => return,
-    };
-
-    if let Some(info) = self.command_handlers.get(&cmd.name) {
-      {
-        if let Some(ctx) = self.context.upgrade() {
-          let ctx = ctx.lock().unwrap();
-          let cfg = ctx.cfg.lock().unwrap();
-          let pm = ctx.perm_mgr.lock().unwrap();
-          if pm.can(user_id, info.perm) {
-            drop(cfg);
-            (info.handler)(bot.clone(), msg.clone(), cmd, self.context.clone());
-          }
-        }
-      }
-    }
-  }
-
-  pub async fn handle_message(
-    &self,
-    bot: teloxide::Bot,
-    msg: teloxide::prelude::Message,
-  ) -> Option<()> {
-    let text = msg.text()?;
-
-    let prefixes = if let Some(ctx) = self.context.upgrade() {
-      let ctx = ctx.lock().unwrap();
-      let cfg = ctx.cfg.lock().unwrap();
-      cfg.get_prefixes()
-    } else {
-      log::error!("using context after it has been destroyed");
-      return None;
-    };
-
-    let cmd = Command::with_prefixes(text, prefixes)?;
-    self.handle_command(bot, msg, cmd).await;
-    Some(())
   }
 }
