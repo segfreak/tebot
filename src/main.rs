@@ -34,23 +34,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   dotenv().ok();
   env_logger::init();
 
-  log::debug!("initializing configuration");
+  log::trace!("initializing configuration");
   let cfg = Config::new_arc_mutex(env::get_token(), env::get_prefixes());
 
-  log::debug!("setting up database connection pool");
+  log::trace!("setting up database connection pool");
   let _conn_mgr = SqliteConnectionManager::file(env::get_db_path());
   let pool = Arc::new(Pool::new(_conn_mgr).unwrap());
 
-  log::debug!("initializing permission manager");
+  log::trace!("initializing permission manager");
   let perm_mgr = PermissionManager::new_arc_mutex(pool.clone());
 
-  log::debug!("creating bot instance");
+  log::trace!("creating bot instance");
   let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
 
-  log::debug!("creating dispatcher");
+  log::trace!("creating dispatcher");
   let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
 
-  log::debug!("creating context");
+  log::trace!("creating context");
   let ctx = Context::new_arc_mutex(
     cfg.clone(),
     pool.clone(),
@@ -60,20 +60,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   );
 
   {
-    log::debug!("granting owner permission to user 6737206665");
-    perm_mgr
-      .lock()
-      .await
-      .set(teloxide::prelude::UserId(6737206665), Permission::OWNER);
+    if let Ok(owner_id) = env::get_owner_id() {
+      perm_mgr.lock().await.set(owner_id, Permission::OWNER);
+    }
   }
 
   {
-    log::debug!("linking dispatcher to context");
+    log::trace!("linking dispatcher to context");
     dp.lock().await.context = Arc::downgrade(&ctx);
   }
 
   {
-    log::debug!("registering core plugins");
     let plugins_to_register: Vec<plugin::PluginBox> = vec![plugins::core::get_plugin()];
 
     for plugin in plugins_to_register {
@@ -91,19 +88,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       let dp = dp.clone();
 
       async move {
-        log::debug!("new update received, kind: {:?}", update.kind);
+        log::trace!("new update received, kind: {:?}", update.kind);
         dp.lock().await.handle_update((*bot).clone(), update).await;
         Ok::<(), teloxide::RequestError>(())
       }
     }
   });
 
-  log::debug!("starting dispatcher");
+  log::trace!("starting dispatcher");
   Dispatcher::builder(bot.clone(), handler)
     .build()
     .dispatch()
     .await;
 
-  log::debug!("shutdown complete");
+  log::trace!("shutdown complete");
   Ok(())
 }

@@ -66,7 +66,7 @@ impl Dispatcher {
     let user_id = match &msg.from {
       Some(user) => user.id,
       None => {
-        log::debug!("command {} ignored: message has no sender", cmd.name);
+        log::trace!("command {} ignored: message has no sender", cmd.name);
         return;
       }
     };
@@ -79,20 +79,20 @@ impl Dispatcher {
 
         if pm.can(user_id, info.perm) {
           drop(cfg);
-          log::debug!("executing command {} for user {}", cmd.name, user_id);
+          log::trace!("executing command {} for user {}", cmd.name, user_id);
           (info.handler)(bot.clone(), msg.clone(), cmd, self.context.clone());
         } else {
-          log::debug!(
+          log::trace!(
             "user {} does not have permission for command {}",
             user_id,
             cmd.name
           );
         }
       } else {
-        log::debug!("cannot execute command {}: context dropped", cmd.name);
+        log::warn!("cannot execute command {}: context dropped", cmd.name);
       }
     } else {
-      log::debug!(
+      log::trace!(
         "unknown command {} received from user {}",
         cmd.name,
         user_id
@@ -111,12 +111,12 @@ impl Dispatcher {
       let cfg = ctx.cfg.lock().await;
       cfg.get_prefixes()
     } else {
-      log::debug!("cannot handle message: context already destroyed");
+      log::warn!("cannot handle message: context already destroyed");
       return None;
     };
 
     let cmd = command::Command::with_prefixes(text, prefixes)?;
-    log::debug!(
+    log::trace!(
       "handling message as command {} from user {:?}",
       cmd.name,
       msg.from.as_ref().map(|u| u.id)
@@ -134,13 +134,13 @@ impl Dispatcher {
       if self.context.upgrade().is_some() {
         (handler)(bot.clone(), update.clone(), self.context.clone()).await;
       } else {
-        log::debug!("cannot handle update: context already dropped");
+        log::warn!("cannot handle update: context already dropped");
         return None;
       }
     }
 
     if let teloxide::types::UpdateKind::Message(msg) = update.kind {
-      log::debug!("update contains message, handling message");
+      log::trace!("update contains message, handling message");
       self.handle_message(bot.clone(), msg).await;
     }
 

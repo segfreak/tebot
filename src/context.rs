@@ -26,18 +26,21 @@ impl Context {
     bot: Arc<teloxide::Bot>,
     dp: Arc<tokio::sync::Mutex<Dispatcher>>,
   ) -> Self {
+    log::trace!(
+      "creating new context with config, database pool, permission manager, bot, and dispatcher"
+    );
     Self {
-      cfg: cfg,
-      db: db,
-      perm_mgr: perm_mgr,
-      bot: bot,
-      dp: dp,
+      cfg,
+      db,
+      perm_mgr,
+      bot,
+      dp,
     }
   }
 
   pub fn new_arc_mutex(
     cfg: Arc<Mutex<Config>>,
-    db: Arc<r2d2::Pool<SqliteConnectionManager>>,
+    db: Arc<Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
     dp: Arc<tokio::sync::Mutex<Dispatcher>>,

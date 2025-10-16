@@ -1,5 +1,9 @@
 use std::env;
 
+use teloxide::types::UserId;
+
+use super::parsers;
+
 pub fn get_token() -> String {
   env::var("BOT_TOKEN").expect("BOT_TOKEN not set")
 }
@@ -15,4 +19,10 @@ pub fn get_prefixes() -> Vec<char> {
     .chars()
     .collect();
   prefixes
+}
+
+pub fn get_owner_id() -> Result<UserId, String> {
+  let id_str =
+    env::var("OWNER_ID").map_err(|_| "Missing OWNER_ID environment variable".to_string())?;
+  parsers::parse_uid(&id_str)
 }
