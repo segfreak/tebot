@@ -13,6 +13,7 @@ pub type PluginMap = IndexMap<String, PluginBox>;
 pub trait Plugin: Send + Sync {
   fn name(&self) -> &str;
   fn commands(&self) -> IndexMap<String, command::CommandMetadata>;
+  fn update_handlers(&self) -> Vec<command::UpdateHandler>;
 }
 
 #[derive(Derivative)]

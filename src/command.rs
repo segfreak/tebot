@@ -1,3 +1,4 @@
+use std::pin::Pin;
 use std::sync::Weak;
 use std::sync::{Arc, Mutex};
 
@@ -9,6 +10,16 @@ use super::permissions;
 
 pub type CommandHandler = Arc<
   dyn Fn(teloxide::Bot, teloxide::prelude::Message, Command, Weak<Mutex<context::Context>>)
+    + Send
+    + Sync,
+>;
+
+pub type UpdateHandler = Arc<
+  dyn Fn(
+      teloxide::Bot,
+      teloxide::prelude::Update,
+      Weak<tokio::sync::Mutex<context::Context>>,
+    ) -> Pin<Box<dyn Future<Output = ()> + Send>>
     + Send
     + Sync,
 >;

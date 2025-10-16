@@ -44,6 +44,10 @@ impl plugin::Plugin for CorePlugin {
     cmds.insert("ping".to_string(), ping_cmd);
     cmds
   }
+
+  fn update_handlers(&self) -> Vec<crate::command::UpdateHandler> {
+    Vec::new()
+  }
 }
 
 pub fn get_plugin() -> plugin::PluginBox {
