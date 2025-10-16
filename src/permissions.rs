@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use rusqlite::params;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use tokio::sync::Mutex;
 
 use r2d2::Pool;
@@ -10,6 +10,8 @@ use r2d2_sqlite::SqliteConnectionManager;
 use bitflags::bitflags;
 
 use teloxide::prelude::UserId;
+
+pub type PermissionMap = HashMap<UserId, Permission>;
 
 bitflags! {
   #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash, Serialize, Deserialize)]

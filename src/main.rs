@@ -4,6 +4,7 @@ pub mod context;
 pub mod dispatcher;
 pub mod env;
 pub mod handler;
+pub mod parsers;
 pub mod permissions;
 pub mod plugin;
 
