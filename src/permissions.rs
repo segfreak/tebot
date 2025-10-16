@@ -68,13 +68,17 @@ impl PermissionManager {
 
   pub fn get(&self, user_id: UserId) -> Permission {
     let conn = self.db.get().unwrap();
-    conn
+    let perm = conn
       .query_row(
         "SELECT flags FROM permissions WHERE user_id = ?1",
         params![user_id.0],
         |row| Ok(Permission::from_bits_truncate(row.get::<_, u32>(0)?)),
       )
-      .unwrap_or(Permission::NONE)
+      .unwrap_or(Permission::NONE);
+
+    log::debug!("get permission for user {}: {:?}", user_id, perm);
+
+    perm
   }
 
   pub fn set(&self, user_id: UserId, perm: Permission) {
@@ -87,27 +91,57 @@ impl PermissionManager {
         params![user_id.0, perm.bits()],
       )
       .unwrap();
+
+    log::debug!("set permission for user {}: {:?}", user_id, perm);
   }
 
   pub fn grant(&self, user_id: UserId, perm: Permission) {
     let current = self.get(user_id);
     self.set(user_id, current | perm);
+
+    log::debug!(
+      "grant permission {:?} to user {}, previous {:?}",
+      perm,
+      user_id,
+      current
+    );
   }
 
   pub fn revoke(&self, user_id: UserId, perm: Permission) {
     let current = self.get(user_id);
     self.set(user_id, current - perm);
+
+    log::debug!(
+      "revoke permission {:?} from user {}, previous {:?}",
+      perm,
+      user_id,
+      current
+    );
   }
 
   pub fn has(&self, user_id: UserId, perm: Permission) -> bool {
-    self.get(user_id).contains(perm)
+    let has_perm = self.get(user_id).contains(perm);
+
+    log::debug!(
+      "check if user {} has permission {:?}: {}",
+      user_id,
+      perm,
+      has_perm
+    );
+
+    has_perm
   }
 
   pub fn can(&self, user_id: UserId, perm: Permission) -> bool {
-    let _can = self.get(user_id).level() >= perm.level();
+    let can_access = self.get(user_id).level() >= perm.level();
 
-    log::debug!("{} can access to {:?}: {}", user_id, perm, _can);
+    log::debug!(
+      "check if user {} can access level {:?}: {}",
+      user_id,
+      perm,
+      can_access
+    );
 
-    _can
+    can_access
   }
 }
