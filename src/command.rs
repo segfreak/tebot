@@ -161,7 +161,9 @@ impl CommandDispatcher {
     Arc::new(tokio::sync::Mutex::new(Self::new(context)))
   }
 
+  #[deprecated]
   pub fn register_command_handler(&mut self, name: &str, meta: CommandMetadata) {
+    log::warn!("deprecated");
     self.command_handlers.insert(name.to_string(), meta);
   }
 

@@ -76,7 +76,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   let me = bot.get_me().await?;
   log::info!("logged in as {} [ id: {} ]", me.full_name(), me.id);
-  log::trace!("context dump:\n{:#?}", ctx);
 
   let handler = teloxide::prelude::Update::filter_message().endpoint({
     let dp = cmd_dp.clone();
@@ -87,7 +86,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
       let pdp = pdp.clone();
 
       async move {
-        log::debug!("handling new message {} [at {}]", msg.id, msg.chat.id);
+        log::debug!("new message[{}] received at[{}]", msg.id, msg.chat.id);
         dp.lock()
           .await
           .handle_message((*bot).clone(), msg.clone())

@@ -42,11 +42,11 @@ impl PluginCommandDispatcher {
 
   pub fn register_plugin(&mut self, plugin: PluginBox) {
     let plugin_name = plugin.name().to_string();
-    log::info!("[{}] loading ...", plugin_name);
+    log::debug!("[{}] registering", plugin_name);
 
     for (cmd_name, meta) in plugin.commands() {
-      log::info!(
-        "[{}] command: {:<15}",
+      log::debug!(
+        "[{}] command {} registered",
         plugin_name.clone(),
         cmd_name.clone()
       );
@@ -55,7 +55,7 @@ impl PluginCommandDispatcher {
     }
 
     self.plugins.insert(plugin_name.clone(), plugin);
-    log::info!("[{}] loaded", plugin_name);
+    log::debug!("[{}] successfully registered", plugin_name);
   }
 
   pub async fn handle_command(
