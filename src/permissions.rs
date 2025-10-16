@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 
 use rusqlite::params;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;

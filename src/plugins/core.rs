@@ -1,4 +1,5 @@
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Weak};
+use tokio::sync::Mutex;
 
 use indexmap::IndexMap;
 
@@ -36,7 +37,7 @@ pub async fn on_id(
     .await;
 }
 
-pub async fn on_help(
+pub async fn on_legacy_help(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
@@ -53,7 +54,7 @@ pub async fn on_help(
     }
   };
 
-  let ctx_guard = ctx.lock().unwrap();
+  let ctx_guard: tokio::sync::MutexGuard<'_, context::Context> = ctx.lock().await;
 
   let dp_guard = ctx_guard.dp.lock().await;
 
@@ -70,7 +71,7 @@ pub async fn on_help(
         })
         .collect();
 
-      let prefix = ctx_guard.cfg.lock().unwrap().get_prefixes()[0];
+      let prefix = ctx_guard.cfg.lock().await.get_prefixes()[0];
       format!(
                 " ‣ Command <code>{}{}</code>\n ‣ Description: <b>{}</b>\n ‣ Arguments: \n{}\n ‣ Reply: <i>{:?}</i>",
                 prefix,
@@ -83,7 +84,7 @@ pub async fn on_help(
       format!("Command <b>{}</b> not found", command_name)
     }
   } else {
-    let prefix = ctx_guard.cfg.lock().unwrap().get_prefixes()[0];
+    let prefix = ctx_guard.cfg.lock().await.get_prefixes()[0];
     dp_guard
       .command_handlers
       .iter()
@@ -129,23 +130,25 @@ impl plugin::Plugin for CorePlugin {
       }),
     );
 
-    // let help_cmd = CommandMetadata::new(
-    //   Permission::USER,
-    //   "".to_string(),
-    //   ReplyRequirement::None,
-    //   vec![ArgMetadata::new(
-    //     "command".to_string(),
-    //     "Shows help for this command".to_string(),
-    //     ArgRequirement::Optional,
-    //   )],
-    //   Arc::new(|_bot, _msg, _cmd, _ctx| {
-    //     tokio::spawn(async move {
-    //       on_help(_bot, _msg, _cmd, _ctx).await;
-    //     });
-    //   }),
-    // );
+    let help_cmd = CommandMetadata::new(
+      Permission::USER,
+      "".to_string(),
+      ReplyRequirement::None,
+      vec![ArgMetadata::new(
+        "command".to_string(),
+        "Shows help for this command".to_string(),
+        ArgRequirement::Optional,
+      )],
+      Arc::new(|_bot, _msg, _cmd, _ctx| {
+        tokio::spawn(async move {
+          on_legacy_help(_bot, _msg, _cmd, _ctx).await;
+        });
+      }),
+    );
 
     cmds.insert("ping".to_string(), ping_cmd);
+    cmds.insert("help".to_string(), help_cmd);
+
     cmds
   }
 

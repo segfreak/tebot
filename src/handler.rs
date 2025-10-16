@@ -1,5 +1,6 @@
 use std::pin::Pin;
-use std::sync::{Arc, Mutex, Weak};
+use std::sync::{Arc, Weak};
+use tokio::sync::Mutex;
 
 use super::command;
 use super::context;

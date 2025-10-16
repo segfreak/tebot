@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let _conn_mgr = SqliteConnectionManager::file(env::get_db_path());
   let pool = Arc::new(Pool::new(_conn_mgr).unwrap());
   let perm_mgr = PermissionManager::new_arc_mutex(pool.clone());
-  let bot = Arc::new(Bot::new(cfg.lock().unwrap().get_token()));
+  let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
 
   let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
 
@@ -52,7 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   {
     perm_mgr
       .lock()
-      .unwrap()
+      .await
       .set(teloxide::prelude::UserId(6737206665), Permission::OWNER);
   }
 

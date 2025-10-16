@@ -1,5 +1,5 @@
-use std::sync::Arc;
-use std::sync::{Mutex, Weak};
+use std::sync::{Arc, Weak};
+use tokio::sync::Mutex;
 
 use derivative::Derivative;
 use indexmap::IndexMap;
@@ -74,9 +74,9 @@ impl Dispatcher {
 
     if let Some(info) = self.command_handlers.get(&cmd.name) {
       if let Some(ctx) = self.context.upgrade() {
-        let ctx = ctx.lock().unwrap();
-        let cfg = ctx.cfg.lock().unwrap();
-        let pm = ctx.perm_mgr.lock().unwrap();
+        let ctx = ctx.lock().await;
+        let cfg = ctx.cfg.lock().await;
+        let pm = ctx.perm_mgr.lock().await;
         if pm.can(user_id, info.perm) {
           drop(cfg);
           (info.handler)(bot.clone(), msg.clone(), cmd, self.context.clone());
@@ -92,8 +92,8 @@ impl Dispatcher {
   ) -> Option<()> {
     let text = msg.text()?;
     let prefixes = if let Some(ctx) = self.context.upgrade() {
-      let ctx = ctx.lock().unwrap();
-      let cfg = ctx.cfg.lock().unwrap();
+      let ctx = ctx.lock().await;
+      let cfg = ctx.cfg.lock().await;
       cfg.get_prefixes()
     } else {
       log::error!("using context after it has been destroyed");
