@@ -37,8 +37,8 @@ async fn main() -> anyhow::Result<()> {
   dotenv().ok();
   env_logger::init();
 
-  let cfg = Config::new_shared(env::get_token(), env::get_prefixes());
-  let _conn_mgr = SqliteConnectionManager::file(env::get_db_path());
+  let cfg = Config::new_shared(env::get_token().await, env::get_prefixes().await);
+  let _conn_mgr = SqliteConnectionManager::file(env::get_db_path().await);
 
   let pool = Arc::new(Pool::new(_conn_mgr)?);
 
@@ -56,7 +56,7 @@ async fn main() -> anyhow::Result<()> {
   )));
 
   {
-    if let Ok(owner_id) = env::get_owner_id() {
+    if let Ok(owner_id) = env::get_owner_id().await {
       perm_mgr.lock().await.set(owner_id, Permission::OWNER)?;
     }
   }

@@ -1,14 +1,15 @@
+use anyhow::{anyhow, Context};
 use teloxide::prelude::UserId;
 
 use super::permissions::{Permission, PermissionMap};
 
-pub fn parse_permission(s: &str) -> Result<Permission, String> {
+pub async fn parse_permission(s: &str) -> anyhow::Result<Permission> {
   let s = s.trim();
   log::trace!("parsing permission from string '{}'", s);
 
   if s.is_empty() {
     log::trace!("permission string is empty");
-    return Err("empty role string".to_string());
+    return Err(anyhow!("empty permission string"));
   }
 
   let mut role_mask = Permission::NONE;
@@ -28,7 +29,7 @@ pub fn parse_permission(s: &str) -> Result<Permission, String> {
       }
       other => {
         log::trace!("unknown permission '{}'", other);
-        return Err(format!("unknown role: {}", other));
+        return Err(anyhow!("unknown permission: {}", other));
       }
     }
   }
@@ -37,24 +38,27 @@ pub fn parse_permission(s: &str) -> Result<Permission, String> {
   Ok(role_mask)
 }
 
-pub fn parse_uid(s: &str) -> Result<UserId, String> {
+pub async fn parse_uid(s: &str) -> anyhow::Result<UserId> {
   log::trace!("parsing user id from string '{}'", s);
-  s.parse::<u64>().map(UserId).map_err(|_| {
-    log::trace!("failed to parse user id from '{}'", s);
-    format!("invalid user id: '{}'", s)
-  })
+  s.parse::<u64>()
+    .map(UserId)
+    .map_err(|_| anyhow!("invalid user id: '{}'", s))
 }
 
-pub fn parse_uid_perm(s: &str) -> Result<(UserId, Permission), String> {
+pub async fn parse_uid_perm(s: &str) -> anyhow::Result<(UserId, Permission)> {
   log::trace!("parsing user id and permission from '{}'", s);
   let parts: Vec<&str> = s.trim().split_whitespace().collect();
   if parts.len() != 2 {
     log::trace!("invalid role entry '{}'", s);
-    return Err(format!("invalid role entry: {}", s));
+    return Err(anyhow!("invalid role entry: {}", s));
   }
 
-  let user_id = parse_uid(parts[0])?;
-  let role_mask = parse_permission(parts[1])?;
+  let user_id = parse_uid(parts[0])
+    .await
+    .context("parsing user id failed")?;
+  let role_mask = parse_permission(parts[1])
+    .await
+    .context("parsing permission failed")?;
 
   log::trace!(
     "parsed entry: user_id={:?}, permission={:?}",
@@ -64,10 +68,10 @@ pub fn parse_uid_perm(s: &str) -> Result<(UserId, Permission), String> {
   Ok((user_id, role_mask))
 }
 
-pub fn parse_perm_arg(s: &str) -> Result<PermissionMap, String> {
+pub async fn parse_perm_arg(s: &str) -> anyhow::Result<PermissionMap> {
   log::trace!("parsing permission map from '{}'", s);
   let mut map = PermissionMap::new();
-  let (uid, role) = parse_uid_perm(s)?;
+  let (uid, role) = parse_uid_perm(s).await?;
   map.insert(uid, role);
   log::trace!("permission map created: {:?}", map);
   Ok(map)
