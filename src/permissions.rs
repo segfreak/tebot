@@ -111,7 +111,7 @@ impl PermissionManager {
   }
 
   pub fn grant(&self, user_id: UserId, perm: Permission) -> anyhow::Result<()> {
-    let current = self.get(user_id)?;
+    let current = self.get(user_id).unwrap_or(Permission::NONE);
     self.set(user_id, current | perm)?;
 
     log::trace!(
@@ -169,12 +169,32 @@ impl PermissionManager {
     let mut stmt = conn.prepare("SELECT user_id, flags FROM permissions")?;
 
     let rows = stmt.query_map([], |row| {
-      let user_id: u64 = row.get(0)?;
+      let _user_id: String = row.get(0)?;
+      let user_id: u64 = _user_id.parse().map_err(|e| {
+        rusqlite::Error::FromSqlConversionFailure(
+          0,
+          rusqlite::types::Type::Text,
+          Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            format!("parsing error: {}", e),
+          )),
+        )
+      })?;
       let flags: u32 = row.get(1)?;
       Ok((UserId(user_id), Permission::from_bits_truncate(flags)))
     })?;
 
-    Ok(rows.filter_map(Result::ok).collect())
+    let result: Vec<_> = rows
+      .filter_map(|r| match &r {
+        Ok(_val) => Some(r.unwrap()),
+        Err(e) => {
+          log::error!("error while reading row: {:?}", e);
+          None
+        }
+      })
+      .collect();
+
+    Ok(result)
   }
 
   pub fn load_snapshot_iter(&self, snapshot: &PermissionMap) -> anyhow::Result<()> {
@@ -191,7 +211,9 @@ impl PermissionManager {
   }
 
   pub fn snapshot(&self) -> anyhow::Result<PermissionMap> {
-    Ok(self.perm_iter()?.into_iter().collect())
+    let result: PermissionMap = self.perm_iter()?.into_iter().collect();
+    log::debug!("snapshot() returned {} entries", result.len());
+    Ok(result)
   }
 
   pub fn load_snapshot(&self, snapshot: &PermissionMap) -> anyhow::Result<()> {

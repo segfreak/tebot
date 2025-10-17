@@ -31,6 +31,12 @@ pub enum CoreError {
 
   #[error("unknown {0}")]
   UnknownOption(String),
+
+  #[error("{0} not found")]
+  NotFound(String),
+
+  #[error("{0} is empty")]
+  IsEmpty(String),
 }
 
 pub async fn on_id(

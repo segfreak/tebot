@@ -110,28 +110,32 @@ impl Dispatcher {
     bot: teloxide::Bot,
     msg: teloxide::prelude::Message,
   ) -> anyhow::Result<()> {
-    let text = msg
-      .text()
-      .ok_or_else(|| anyhow::anyhow!("message has no text"))?;
+    if let Some(text) = msg.text() {
+      let prefixes = if let Some(ctx) = self.context.upgrade() {
+        let ctx = ctx.lock().await;
+        let cfg = ctx.cfg.lock().await;
+        cfg.get_prefixes()
+      } else {
+        log::warn!("cannot handle message: context already destroyed");
+        return Ok(());
+      };
 
-    let prefixes = if let Some(ctx) = self.context.upgrade() {
-      let ctx = ctx.lock().await;
-      let cfg = ctx.cfg.lock().await;
-      cfg.get_prefixes()
+      if let Some(cmd) = command::Command::with_prefixes(text, prefixes) {
+        log::trace!(
+          "handling message as command {} from user {:?}",
+          cmd.name,
+          msg.from.as_ref().map(|u| u.id)
+        );
+
+        if let Err(e) = self.handle_command(bot, msg, cmd).await {
+          log::error!("failed to handle command: {:?}", e);
+        }
+      } else {
+        log::trace!("message does not match any command, ignoring");
+      }
     } else {
-      anyhow::bail!("cannot handle message: context already destroyed");
-    };
-
-    let cmd = command::Command::with_prefixes(text, prefixes)
-      .ok_or_else(|| anyhow::anyhow!("message does not match any command"))?;
-
-    log::trace!(
-      "handling message as command {} from user {:?}",
-      cmd.name,
-      msg.from.as_ref().map(|u| u.id)
-    );
-
-    self.handle_command(bot, msg, cmd).await?;
+      log::trace!("message has no text, ignoring");
+    }
 
     Ok(())
   }

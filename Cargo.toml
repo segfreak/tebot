@@ -1,7 +1,10 @@
 [package]
 name = "tebot"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2024"
+
+[profile.dev]
+incremental = true
 
 [dependencies]
 anyhow = "1.0.100"

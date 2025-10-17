@@ -28,7 +28,7 @@ async fn handle_perm_event(
   _weak_ctx: Weak<Mutex<context::Context>>,
   _event: PermissionEvent,
   _perm: Option<Permission>,
-  _user_id: UserId,
+  _user_id: Option<UserId>,
 ) -> anyhow::Result<()> {
   let _ctx = match _weak_ctx.upgrade() {
     Some(ctx) => ctx,
@@ -50,6 +50,20 @@ async fn handle_perm_event(
   let _pm_guard = _ctx_guard.perm_mgr.lock().await;
 
   let _perm_needed: bool;
+
+  let _user_id = match _user_id {
+    Some(id) => id,
+    None => {
+      return Err(
+        error::emit(
+          Some(_bot.clone()),
+          Some(_msg.clone()),
+          CoreError::OptionNotSpecified("user_id".to_string()),
+        )
+        .await,
+      );
+    }
+  };
 
   match _event {
     PermissionEvent::Grant => {
@@ -165,12 +179,13 @@ async fn parse_user_id_and_perm(
   _bot: &Bot,
   _msg: &Message,
   _cmd: &command::Command,
+  _require_userid: bool,
   _require_perm: bool,
-) -> anyhow::Result<(UserId, Option<Permission>)> {
+) -> anyhow::Result<(Option<UserId>, Option<Permission>)> {
   let _user_id = if let Some(reply) = &_msg.reply_to_message() {
-    reply.from.as_ref().map(|u| u.id).unwrap_or(UserId(0))
-  } else {
-    if _cmd.args.is_empty() {
+    reply.from.as_ref().map(|u| u.id)
+  } else if _cmd.args.is_empty() {
+    if _require_userid {
       return Err(
         error::emit(
           Some(_bot.clone()),
@@ -180,18 +195,22 @@ async fn parse_user_id_and_perm(
         .await,
       );
     }
-
+    None
+  } else {
     match parsers::parse_uid(&_cmd.args[0]).await {
-      Ok(uid) => uid,
+      Ok(uid) => Some(uid),
       Err(_) => {
-        return Err(
-          error::emit(
-            Some(_bot.clone()),
-            Some(_msg.clone()),
-            CoreError::InvalidOption("user_id".to_string()),
-          )
-          .await,
-        );
+        if _require_userid {
+          return Err(
+            error::emit(
+              Some(_bot.clone()),
+              Some(_msg.clone()),
+              CoreError::InvalidOption("user_id".to_string()),
+            )
+            .await,
+          );
+        }
+        None
       }
     }
   };
@@ -200,7 +219,8 @@ async fn parse_user_id_and_perm(
     let perm_str = if let Some(_reply) = &_msg.reply_to_message() {
       _cmd.args.get(0)
     } else {
-      _cmd.args.get(1)
+      let index = if _require_userid { 1 } else { 0 };
+      _cmd.args.get(index)
     };
 
     let perm_str = match perm_str {
@@ -243,7 +263,7 @@ pub async fn on_grant(
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
 ) -> anyhow::Result<()> {
-  let (user_id, perm) = parse_user_id_and_perm(&bot, &msg, &cmd, true).await?;
+  let (user_id, perm) = parse_user_id_and_perm(&bot, &msg, &cmd, true, true).await?;
   handle_perm_event(bot, msg, ctx, PermissionEvent::Grant, perm, user_id).await
 }
 
@@ -253,7 +273,7 @@ pub async fn on_revoke(
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
 ) -> anyhow::Result<()> {
-  let (user_id, perm) = parse_user_id_and_perm(&bot, &msg, &cmd, true).await?;
+  let (user_id, perm) = parse_user_id_and_perm(&bot, &msg, &cmd, true, true).await?;
   handle_perm_event(bot, msg, ctx, PermissionEvent::Revoke, perm, user_id).await
 }
 
@@ -263,7 +283,7 @@ pub async fn on_set(
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
 ) -> anyhow::Result<()> {
-  let (user_id, perm) = parse_user_id_and_perm(&bot, &msg, &cmd, true).await?;
+  let (user_id, perm) = parse_user_id_and_perm(&bot, &msg, &cmd, true, true).await?;
   handle_perm_event(bot, msg, ctx, PermissionEvent::Set, perm, user_id).await
 }
 
@@ -273,8 +293,96 @@ pub async fn on_reset(
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
 ) -> anyhow::Result<()> {
-  let (user_id, _) = parse_user_id_and_perm(&bot, &msg, &cmd, false).await?;
+  let (user_id, _) = parse_user_id_and_perm(&bot, &msg, &cmd, true, false).await?;
   handle_perm_event(bot, msg, ctx, PermissionEvent::Reset, None, user_id).await
+}
+
+pub async fn on_show(
+  _bot: Bot,
+  _msg: Message,
+  _cmd: command::Command,
+  _weak_ctx: Weak<Mutex<context::Context>>,
+) -> anyhow::Result<()> {
+  let (_user_id, _) = parse_user_id_and_perm(&_bot, &_msg, &_cmd, false, false).await?;
+
+  let _ctx = match _weak_ctx.upgrade() {
+    Some(ctx) => ctx,
+    None => {
+      return Err(
+        error::emit(
+          Some(_bot.clone()),
+          Some(_msg.clone()),
+          error::Error::ContextDisposed,
+        )
+        .await,
+      )
+    }
+  };
+
+  let _style = style::get_style(_weak_ctx.clone()).await;
+
+  let _ctx_guard = _ctx.lock().await;
+  let _pm_guard = _ctx_guard.perm_mgr.lock().await;
+
+  let _pm_map = _pm_guard.snapshot()?;
+
+  if let Some(_uid) = _user_id {
+    match _pm_map.get(&_uid) {
+      Some(perm) => {
+        let text = format!(
+          "{} <b>User ID:</b> <code>{}</code>\n{} <b>Permission:</b> <code>{:?}</code>",
+          _style.bullet(),
+          _uid.0,
+          _style.info(),
+          perm
+        );
+
+        _bot
+          .send_message(_msg.chat.id, text)
+          .parse_mode(teloxide::types::ParseMode::Html)
+          .await?;
+      }
+      None => {
+        return Err(
+          error::emit(
+            Some(_bot.clone()),
+            Some(_msg.clone()),
+            CoreError::NotFound("permissions".to_string()),
+          )
+          .await,
+        )
+      }
+    }
+    return Ok(());
+  }
+
+  if _pm_map.is_empty() {
+    return Err(
+      error::emit(
+        Some(_bot.clone()),
+        Some(_msg.clone()),
+        CoreError::IsEmpty("permission map".to_string()),
+      )
+      .await,
+    );
+  }
+
+  let mut text = format!("{} <b>Current Permission Map:</b>\n\n", _style.bullet());
+  for (uid, perm) in _pm_map {
+    text.push_str(&format!(
+      "{} User ID: <code>{}</code>\n  └─ Permission: <b>{:?}</b>\n",
+      _style.info(),
+      uid.0,
+      perm
+    ));
+  }
+
+  _bot
+    .send_message(_msg.chat.id, text)
+    .parse_mode(teloxide::types::ParseMode::Html)
+    .await?;
+
+  Ok(())
 }
 
 pub struct AccessPlugin {}
@@ -378,10 +486,27 @@ impl plugin::Plugin for AccessPlugin {
       }),
     );
 
+    let show_cmd = CommandMetadata::new(
+      Permission::OWNER,
+      "Show permissions".to_string(),
+      ReplyRequirement::None,
+      vec![ArgMetadata::new(
+        "user_id".to_string(),
+        "User Id to show permissions".to_string(),
+        ArgRequirement::OnlyWithoutReply,
+      )],
+      Arc::new(|_bot, _msg, _cmd, _ctx| {
+        tokio::spawn(async move {
+          on_show(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
+        });
+      }),
+    );
+
     cmds.insert("pmgrant".to_string(), grant_cmd);
     cmds.insert("pmrevoke".to_string(), revoke_cmd);
     cmds.insert("pmset".to_string(), set_cmd);
     cmds.insert("pmreset".to_string(), reset_cmd);
+    cmds.insert("pmshow".to_string(), show_cmd);
 
     cmds
   }
