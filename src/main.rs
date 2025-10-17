@@ -70,7 +70,7 @@ async fn main() -> anyhow::Result<()> {
   }
 
   {
-    plugin::register_all(dp.clone(), plugins::all()).await;
+    plugin::register_all(dp.clone(), plugins::all().await).await;
   }
 
   let me = bot.get_me().await?;

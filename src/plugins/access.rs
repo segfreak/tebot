@@ -257,7 +257,7 @@ async fn parse_user_id_and_perm(
   Ok((_user_id, _perm))
 }
 
-pub async fn on_grant(
+async fn on_grant(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
@@ -267,7 +267,7 @@ pub async fn on_grant(
   handle_perm_event(bot, msg, ctx, PermissionEvent::Grant, perm, user_id).await
 }
 
-pub async fn on_revoke(
+async fn on_revoke(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
@@ -277,7 +277,7 @@ pub async fn on_revoke(
   handle_perm_event(bot, msg, ctx, PermissionEvent::Revoke, perm, user_id).await
 }
 
-pub async fn on_set(
+async fn on_set(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
@@ -287,7 +287,7 @@ pub async fn on_set(
   handle_perm_event(bot, msg, ctx, PermissionEvent::Set, perm, user_id).await
 }
 
-pub async fn on_reset(
+async fn on_reset(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
@@ -297,7 +297,7 @@ pub async fn on_reset(
   handle_perm_event(bot, msg, ctx, PermissionEvent::Reset, None, user_id).await
 }
 
-pub async fn on_show(
+async fn on_show(
   _bot: Bot,
   _msg: Message,
   _cmd: command::Command,
@@ -516,6 +516,6 @@ impl plugin::Plugin for AccessPlugin {
   }
 }
 
-pub fn get_plugin() -> plugin::PluginBox {
+pub async fn get_plugin() -> plugin::PluginBox {
   Box::new(AccessPlugin::new())
 }

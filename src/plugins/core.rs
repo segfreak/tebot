@@ -40,7 +40,7 @@ pub enum CoreError {
   IsEmpty(String),
 }
 
-pub async fn on_id(
+async fn on_id(
   bot: Bot,
   msg: Message,
   _cmd: command::Command,
@@ -71,7 +71,7 @@ pub async fn on_id(
   Ok(())
 }
 
-pub async fn on_help(
+async fn on_help(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
@@ -196,7 +196,7 @@ fn format_duration(dur: Duration) -> String {
   }
 }
 
-pub async fn on_uptime(
+async fn on_uptime(
   _bot: Bot,
   _msg: Message,
   _cmd: command::Command,
@@ -217,7 +217,7 @@ pub async fn on_uptime(
   Ok(())
 }
 
-pub async fn on_shutdown(
+async fn on_shutdown(
   _bot: Bot,
   _msg: Message,
   _cmd: command::Command,
@@ -313,6 +313,6 @@ impl plugin::Plugin for CorePlugin {
   }
 }
 
-pub fn get_plugin() -> plugin::PluginBox {
+pub async fn get_plugin() -> plugin::PluginBox {
   Box::new(CorePlugin::new())
 }
