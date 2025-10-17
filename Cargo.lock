@@ -1716,7 +1716,7 @@ checksum = "20f34339676cdcab560c9a82300c4c2581f68b9369aedf0fae86f2ff9565ff3e"
 
 [[package]]
 name = "tebot"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "anyhow",
  "bitflags",
@@ -1725,6 +1725,7 @@ dependencies = [
  "env_logger",
  "indexmap 2.11.4",
  "log",
+ "once_cell",
  "r2d2",
  "r2d2_sqlite",
  "rusqlite",

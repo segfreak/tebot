@@ -29,8 +29,12 @@ use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
 use dotenvy::dotenv;
+use once_cell::sync::Lazy;
+use std::time::Instant;
 
 use crate::permissions::Permission;
+
+pub static START_TIME: Lazy<Instant> = Lazy::new(|| Instant::now());
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -96,6 +100,5 @@ async fn main() -> anyhow::Result<()> {
     .dispatch()
     .await;
 
-  log::trace!("shutdown");
   Ok(())
 }
