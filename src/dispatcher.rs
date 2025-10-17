@@ -20,7 +20,7 @@ pub struct Dispatcher {
   pub update_handlers: Vec<handler::UpdateHandler>,
 
   #[derivative(Debug = "ignore")]
-  pub plugins: IndexMap<String, plugin::PluginBox>,
+  pub plugins: plugin::PluginMap,
 }
 
 impl Dispatcher {
