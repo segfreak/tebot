@@ -1,33 +1,27 @@
-use thiserror::Error;
-
 use teloxide::prelude::Requester;
 
 use crate::style::{DefaultStyle, Style};
 
-#[derive(Error, Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum Error {
   #[error("context is disposed")]
   ContextDisposed,
-
-  #[error(transparent)]
-  Teloxide(#[from] teloxide::RequestError),
+  // #[error(transparent)]
+  // Teloxide(#[from] teloxide::RequestError),
 }
 
 pub async fn emit(
-  _bot: Option<teloxide::Bot>,
-  _msg: Option<teloxide::prelude::Message>,
-  err: impl std::error::Error + Send + Sync + 'static,
-) -> Box<dyn std::error::Error + Send + Sync> {
-  let err_boxed: Box<dyn std::error::Error + Send + Sync> = Box::new(err);
+  bot: Option<teloxide::Bot>,
+  msg: Option<teloxide::prelude::Message>,
+  err: impl Into<anyhow::Error>,
+) -> anyhow::Error {
+  let _err = err.into();
 
-  if let (Some(bot), Some(msg)) = (_bot, _msg) {
+  if let (Some(bot), Some(msg)) = (bot, msg) {
     let _ = bot
-      .send_message(
-        msg.chat.id,
-        format!("{} {}", DefaultStyle::s_err(), err_boxed),
-      )
+      .send_message(msg.chat.id, format!("{} {:?}", DefaultStyle::s_err(), _err))
       .await;
   }
 
-  err_boxed
+  _err
 }

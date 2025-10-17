@@ -64,7 +64,7 @@ pub async fn on_help(
   msg: Message,
   cmd: command::Command,
   _ctx: Weak<tokio::sync::Mutex<context::Context>>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> anyhow::Result<()> {
   let chat_id = msg.chat.id;
 
   let ctx = match _ctx.upgrade() {

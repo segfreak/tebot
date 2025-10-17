@@ -20,7 +20,7 @@ async fn handle_role_change(
   cmd: command::Command,
   _ctx: Weak<Mutex<context::Context>>,
   add: bool,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> anyhow::Result<()> {
   let chat_id = msg.chat.id;
   let bot = bot.clone();
   let args = &cmd.args;
@@ -103,9 +103,9 @@ async fn handle_role_change(
   };
 
   if add {
-    pmgr_guard.grant(user_id, role);
+    pmgr_guard.grant(user_id, role)?;
   } else {
-    pmgr_guard.revoke(user_id, role);
+    pmgr_guard.revoke(user_id, role)?;
   }
 
   let action = if add { "added to" } else { "removed from" };
@@ -130,7 +130,7 @@ pub async fn on_grant(
   msg: Message,
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> anyhow::Result<()> {
   handle_role_change(bot, msg, cmd, ctx, true).await
 }
 
@@ -139,7 +139,7 @@ pub async fn on_revoke(
   msg: Message,
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+) -> anyhow::Result<()> {
   handle_role_change(bot, msg, cmd, ctx, false).await
 }
 

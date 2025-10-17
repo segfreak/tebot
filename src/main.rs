@@ -32,14 +32,16 @@ use dotenvy::dotenv;
 use crate::permissions::Permission;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> anyhow::Result<()> {
   dotenv().ok();
   env_logger::init();
 
   let cfg = Config::new_arc_mutex(env::get_token(), env::get_prefixes());
   let _conn_mgr = SqliteConnectionManager::file(env::get_db_path());
-  let pool = Arc::new(Pool::new(_conn_mgr).unwrap());
-  let perm_mgr = PermissionManager::new_arc_mutex(pool.clone());
+
+  let pool = Arc::new(Pool::new(_conn_mgr)?);
+
+  let perm_mgr = PermissionManager::new_arc_mutex(pool.clone())?;
   let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
   let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
   let style = Arc::new(style::DefaultStyle);
@@ -54,7 +56,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
   {
     if let Ok(owner_id) = env::get_owner_id() {
-      perm_mgr.lock().await.set(owner_id, Permission::OWNER);
+      perm_mgr.lock().await.set(owner_id, Permission::OWNER)?;
     }
   }
 
@@ -77,7 +79,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
       async move {
         log::trace!("new update received, kind: {:?}", update.kind);
-        dp.lock().await.handle_update((*bot).clone(), update).await;
+
+        if let Err(err) = dp.lock().await.handle_update((*bot).clone(), update).await {
+          log::error!("error handling update: {:?}", err);
+        }
+
         Ok::<(), teloxide::RequestError>(())
       }
     }

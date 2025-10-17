@@ -43,78 +43,76 @@ pub struct PermissionManager {
 }
 
 impl PermissionManager {
-  pub fn new(db: Arc<Pool<SqliteConnectionManager>>) -> Self {
+  pub fn new(db: Arc<Pool<SqliteConnectionManager>>) -> anyhow::Result<Self> {
     let mgr = Self { db };
-    mgr.init_schema();
-    mgr
+    mgr.init_schema()?;
+    Ok(mgr)
   }
 
-  pub fn new_arc_mutex(db: Arc<Pool<SqliteConnectionManager>>) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(db)))
+  pub fn new_arc_mutex(db: Arc<Pool<SqliteConnectionManager>>) -> anyhow::Result<Arc<Mutex<Self>>> {
+    let mgr = Self::new(db)?;
+    Ok(Arc::new(Mutex::new(mgr)))
   }
 
-  fn init_schema(&self) {
-    let conn = self.db.get().unwrap();
-    conn
-      .execute(
-        "CREATE TABLE IF NOT EXISTS permissions (
+  fn init_schema(&self) -> anyhow::Result<()> {
+    let conn = self.db.get()?;
+    conn.execute(
+      "CREATE TABLE IF NOT EXISTS permissions (
                 user_id TEXT PRIMARY KEY,
                 flags   INTEGER NOT NULL
             )",
-        [],
-      )
-      .unwrap();
+      [],
+    )?;
+    Ok(())
   }
 
-  pub fn reset(&self, user_id: UserId) {
-    let conn = self.db.get().unwrap();
-    conn
-      .execute(
-        "DELETE FROM permissions WHERE user_id = ?1",
-        params![user_id.0],
-      )
-      .unwrap();
+  pub fn reset(&self, user_id: UserId) -> anyhow::Result<()> {
+    let conn = self.db.get()?;
+    conn.execute(
+      "DELETE FROM permissions WHERE user_id = ?1",
+      params![user_id.0],
+    )?;
 
     log::trace!("removed all permissions for user {}", user_id);
+    Ok(())
   }
 
-  pub fn clear(&self) {
-    let conn = self.db.get().unwrap();
-    conn.execute("DELETE FROM permissions", []).unwrap();
+  pub fn clear(&self) -> anyhow::Result<()> {
+    let conn = self.db.get()?;
+    conn.execute("DELETE FROM permissions", [])?;
+    Ok(())
   }
 
-  pub fn get(&self, user_id: UserId) -> Permission {
-    let conn = self.db.get().unwrap();
-    let perm = conn
-      .query_row(
-        "SELECT flags FROM permissions WHERE user_id = ?1",
-        params![user_id.0],
-        |row| Ok(Permission::from_bits_truncate(row.get::<_, u32>(0)?)),
-      )
-      .unwrap_or(Permission::NONE);
+  pub fn get(&self, user_id: UserId) -> anyhow::Result<Permission> {
+    let conn = self.db.get()?;
+    let perm = conn.query_row(
+      "SELECT flags FROM permissions WHERE user_id = ?1",
+      params![user_id.0],
+      |row| Ok(Permission::from_bits_truncate(row.get::<_, u32>(0)?)),
+    )?;
 
     log::trace!("get permission for user {}: {:?}", user_id, perm);
 
-    perm
+    Ok(perm)
   }
 
-  pub fn set(&self, user_id: UserId, perm: Permission) {
-    let conn = self.db.get().unwrap();
-    conn
-      .execute(
-        "INSERT INTO permissions (user_id, flags)
+  pub fn set(&self, user_id: UserId, perm: Permission) -> anyhow::Result<()> {
+    let conn = self.db.get()?;
+    conn.execute(
+      "INSERT INTO permissions (user_id, flags)
              VALUES (?1, ?2)
              ON CONFLICT(user_id) DO UPDATE SET flags = excluded.flags",
-        params![user_id.0, perm.bits()],
-      )
-      .unwrap();
+      params![user_id.0, perm.bits()],
+    )?;
 
     log::trace!("set permission for user {}: {:?}", user_id, perm);
+
+    Ok(())
   }
 
-  pub fn grant(&self, user_id: UserId, perm: Permission) {
-    let current = self.get(user_id);
-    self.set(user_id, current | perm);
+  pub fn grant(&self, user_id: UserId, perm: Permission) -> anyhow::Result<()> {
+    let current = self.get(user_id)?;
+    self.set(user_id, current | perm)?;
 
     log::trace!(
       "grant permission {:?} to user {}, previous {:?}",
@@ -122,11 +120,13 @@ impl PermissionManager {
       user_id,
       current
     );
+
+    Ok(())
   }
 
-  pub fn revoke(&self, user_id: UserId, perm: Permission) {
-    let current = self.get(user_id);
-    self.set(user_id, current - perm);
+  pub fn revoke(&self, user_id: UserId, perm: Permission) -> anyhow::Result<()> {
+    let current = self.get(user_id)?;
+    self.set(user_id, current - perm)?;
 
     log::trace!(
       "revoke permission {:?} from user {}, previous {:?}",
@@ -134,10 +134,12 @@ impl PermissionManager {
       user_id,
       current
     );
+
+    Ok(())
   }
 
-  pub fn has(&self, user_id: UserId, perm: Permission) -> bool {
-    let has_perm = self.get(user_id).contains(perm);
+  pub fn has(&self, user_id: UserId, perm: Permission) -> anyhow::Result<bool> {
+    let has_perm = self.get(user_id)?.contains(perm);
 
     log::trace!(
       "check if user {} has permission {:?}: {}",
@@ -146,11 +148,11 @@ impl PermissionManager {
       has_perm
     );
 
-    has_perm
+    Ok(has_perm)
   }
 
-  pub fn can(&self, user_id: UserId, perm: Permission) -> bool {
-    let can_access = self.get(user_id).level() >= perm.level();
+  pub fn can(&self, user_id: UserId, perm: Permission) -> anyhow::Result<bool> {
+    let can_access = self.get(user_id)?.level() >= perm.level();
 
     log::trace!(
       "check if user {} can access level {:?}: {}",
@@ -159,44 +161,42 @@ impl PermissionManager {
       can_access
     );
 
-    can_access
+    Ok(can_access)
   }
 
-  pub fn perm_iter(&self) -> Vec<(UserId, Permission)> {
-    let conn = self.db.get().unwrap();
-    let mut stmt = conn
-      .prepare("SELECT user_id, flags FROM permissions")
-      .unwrap();
+  pub fn perm_iter(&self) -> anyhow::Result<Vec<(UserId, Permission)>> {
+    let conn = self.db.get()?;
+    let mut stmt = conn.prepare("SELECT user_id, flags FROM permissions")?;
 
-    stmt
-      .query_map([], |row| {
-        let user_id: u64 = row.get(0)?;
-        let flags: u32 = row.get(1)?;
-        Ok((UserId(user_id), Permission::from_bits_truncate(flags)))
-      })
-      .unwrap()
-      .filter_map(Result::ok)
-      .collect()
+    let rows = stmt.query_map([], |row| {
+      let user_id: u64 = row.get(0)?;
+      let flags: u32 = row.get(1)?;
+      Ok((UserId(user_id), Permission::from_bits_truncate(flags)))
+    })?;
+
+    Ok(rows.filter_map(Result::ok).collect())
   }
 
-  pub fn load_snapshot_iter(&self, snapshot: &PermissionMap) {
-    let conn = self.db.get().unwrap();
+  pub fn load_snapshot_iter(&self, snapshot: &PermissionMap) -> anyhow::Result<()> {
+    let conn = self.db.get()?;
+
     for (user_id, perm) in snapshot {
-      conn
-        .execute(
-          "INSERT INTO permissions (user_id, flags) VALUES (?1, ?2)",
-          params![user_id.0, perm.bits()],
-        )
-        .unwrap();
+      conn.execute(
+        "INSERT INTO permissions (user_id, flags) VALUES (?1, ?2)",
+        params![user_id.0, perm.bits()],
+      )?;
     }
+
+    Ok(())
   }
 
-  pub fn snapshot(&self) -> PermissionMap {
-    self.perm_iter().into_iter().collect()
+  pub fn snapshot(&self) -> anyhow::Result<PermissionMap> {
+    Ok(self.perm_iter()?.into_iter().collect())
   }
 
-  pub fn load_snapshot(&self, snapshot: &PermissionMap) {
-    self.clear();
-    self.load_snapshot_iter(snapshot);
+  pub fn load_snapshot(&self, snapshot: &PermissionMap) -> anyhow::Result<()> {
+    self.clear()?;
+    self.load_snapshot_iter(snapshot)?;
+    Ok(())
   }
 }
