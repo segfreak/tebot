@@ -39,7 +39,7 @@ impl Dispatcher {
     Arc::new(tokio::sync::Mutex::new(Self::new(context)))
   }
 
-  pub fn register_plugin(&mut self, plugin: plugin::PluginBox) {
+  pub async fn register_plugin(&mut self, plugin: plugin::PluginBox) {
     let plugin_name = plugin.name().to_string();
     log::debug!("registering plugin {}", plugin_name);
 

@@ -71,11 +71,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   }
 
   {
-    let plugins_to_register: Vec<plugin::PluginBox> = vec![plugins::core::get_plugin()];
-
-    for plugin in plugins_to_register {
-      dp.lock().await.register_plugin(plugin);
-    }
+    let plugs: Vec<plugin::PluginBox> = vec![plugins::core::get_plugin()];
+    plugin::register_all(dp.clone(), plugs).await;
   }
 
   let me = bot.get_me().await?;
