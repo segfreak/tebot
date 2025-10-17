@@ -21,6 +21,7 @@ use teloxide::{
   prelude::{Dispatcher, Requester},
   Bot,
 };
+use tokio::sync::Mutex;
 
 use std::sync::{Arc, Weak};
 
@@ -45,14 +46,14 @@ async fn main() -> anyhow::Result<()> {
   let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
   let dp = dispatcher::Dispatcher::new_shared(Weak::new());
   let style = Arc::new(style::DefaultStyle);
-  let ctx = Context::new_shared(
+  let ctx = Arc::new(Mutex::new(Context::new(
     cfg.clone(),
     pool.clone(),
     perm_mgr.clone(),
     bot.clone(),
     dp.clone(),
     style.clone(),
-  );
+  )));
 
   {
     if let Ok(owner_id) = env::get_owner_id() {

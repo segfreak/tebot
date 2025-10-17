@@ -44,15 +44,4 @@ impl Context {
       style,
     }
   }
-
-  pub fn new_shared(
-    cfg: Arc<Mutex<Config>>,
-    db: Arc<Pool<SqliteConnectionManager>>,
-    perm_mgr: Arc<Mutex<PermissionManager>>,
-    bot: Arc<teloxide::Bot>,
-    dp: Arc<tokio::sync::Mutex<Dispatcher>>,
-    style: Arc<dyn DynStyle>,
-  ) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(cfg, db, perm_mgr, bot, dp, style)))
-  }
 }
