@@ -206,7 +206,7 @@ async fn on_uptime(
   let _uptime = crate::START_TIME.elapsed();
   let _formatted_uptime = format_duration(_uptime);
   let _msg_text = format!(
-    "{} <b>Uptime</b>: <i>{:?}</i>",
+    "{} <b>Uptime</b>: <b>{}</b>",
     _style.arrow(),
     _formatted_uptime
   );

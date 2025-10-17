@@ -34,12 +34,19 @@ use std::time::Instant;
 
 use crate::permissions::Permission;
 
-pub static START_TIME: Lazy<Instant> = Lazy::new(|| Instant::now());
+pub static START_TIME: Lazy<Instant> = Lazy::new(|| {
+  log::debug!("initializing start time");
+  Instant::now()
+});
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
   dotenv().ok();
   env_logger::init();
+
+  // Accessing START_TIME here ensures it is initialized,
+  // because Lazy is only evaluated on first use.
+  let _ = START_TIME.elapsed();
 
   let cfg = Config::new_shared(env::get_token().await, env::get_prefixes().await);
   let _conn_mgr = SqliteConnectionManager::file(env::get_db_path().await);
