@@ -41,20 +41,23 @@ impl Dispatcher {
 
   pub async fn register_plugin(&mut self, plugin: plugin::PluginBox) {
     let plugin_name = plugin.name().to_string();
-    log::debug!("registering plugin {}", plugin_name);
 
     for update in plugin.update_handlers() {
       self.update_handlers.push(update);
     }
 
     for (cmd_name, meta) in plugin.commands() {
-      log::debug!("plugin {}: command {} registered", plugin_name, cmd_name);
+      log::debug!(
+        "registering '{}' ({:?}) from plugin '{}'",
+        cmd_name,
+        meta.perm,
+        plugin_name
+      );
 
       self.command_handlers.insert(cmd_name, meta);
     }
 
     self.plugins.insert(plugin_name.clone(), plugin);
-    log::debug!("plugin {} successfully registered", plugin_name);
   }
 
   pub async fn handle_command(

@@ -19,6 +19,9 @@ pub trait Plugin: Send + Sync {
 
 pub async fn register_all(dp: Arc<Mutex<Dispatcher>>, plugs: Vec<PluginBox>) {
   for plug in plugs {
+    let name = plug.name().to_string();
+    log::debug!("registering plugin {}", name);
     dp.lock().await.register_plugin(plug).await;
+    log::debug!("plugin {} successfully registered", name);
   }
 }
