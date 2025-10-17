@@ -3,10 +3,12 @@ pub mod config;
 pub mod context;
 pub mod dispatcher;
 pub mod env;
+pub mod error;
 pub mod handler;
 pub mod parsers;
 pub mod permissions;
 pub mod plugin;
+pub mod style;
 
 pub mod plugins;
 

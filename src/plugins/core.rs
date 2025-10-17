@@ -1,4 +1,5 @@
 use std::sync::{Arc, Weak};
+use thiserror::Error;
 use tokio::sync::Mutex;
 
 use indexmap::IndexMap;
@@ -10,7 +11,30 @@ use teloxide::Bot;
 
 use crate::command::{self, ArgMetadata, ArgRequirement, CommandMetadata, ReplyRequirement};
 use crate::permissions::Permission;
-use crate::{context, parsers, plugin};
+use crate::{context, error, parsers, plugin};
+
+use crate::style::{DefaultStyle, Style};
+
+#[derive(Error, Debug)]
+pub enum CoreError {
+  #[error(transparent)]
+  Internal(#[from] error::Error),
+
+  #[error("usage: {0}")]
+  InvalidCommandUsage(String),
+
+  #[error("invalid {0}")]
+  InvalidOption(String),
+
+  #[error("command {0} not found")]
+  CommandNotFound(String),
+
+  #[error("{0} not specified")]
+  OptionNotSpecified(String),
+
+  #[error("unknown {0}")]
+  UnknownOption(String),
+}
 
 pub async fn on_id(
   bot: Bot,
@@ -42,17 +66,13 @@ pub async fn on_help(
   bot: Bot,
   msg: Message,
   cmd: command::Command,
-  ctx_weak: Weak<tokio::sync::Mutex<context::Context>>,
-) {
+  _ctx: Weak<tokio::sync::Mutex<context::Context>>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
   let chat_id = msg.chat.id;
 
-  let ctx = match ctx_weak.upgrade() {
+  let ctx = match _ctx.upgrade() {
     Some(ctx) => ctx,
-    None => {
-      log::error!("context disposed");
-      let _ = bot.send_message(chat_id, "⨯ Context disposed").await;
-      return;
-    }
+    None => return Err(error::emit(bot.clone(), msg.clone(), error::Error::ContextDisposed).await),
   };
 
   let ctx_guard = ctx.lock().await;
@@ -66,7 +86,8 @@ pub async fn on_help(
         .iter()
         .map(|arg| {
           format!(
-            "‣ {} [{}] → {}",
+            "{} {} [{}] → {}",
+            DefaultStyle::arrow(),
             arg.name,
             format!("{:?}", arg.requirement),
             arg.description
@@ -75,18 +96,29 @@ pub async fn on_help(
         .collect();
 
       format!(
-        "Command: <code>{}{}</code>\n\
-                 Description: {}\n\
-                 Arguments:\n{}\n\
-                 Reply: <i>{:?}</i>",
+        "{} Command: <code>{}{}</code>\n\
+      {} Description: {}\n\
+      {} Arguments:\n{}\n\
+      {} Reply: <i>{:?}</i>",
+        DefaultStyle::ok(),
         prefix,
         command_name,
+        DefaultStyle::info(),
         info.desc,
-        args_desc.join("\n"),
+        DefaultStyle::info(),
+        args_desc.join(&format!("\n")),
+        DefaultStyle::info(),
         info.reply
       )
     } else {
-      format!("⨯ Command <b>{}</b> not found", command_name)
+      return Err(
+        error::emit(
+          bot.clone(),
+          msg.clone(),
+          CoreError::CommandNotFound(command_name.to_string()),
+        )
+        .await,
+      );
     }
   } else {
     let mut sections = Vec::new();
@@ -95,10 +127,23 @@ pub async fn on_help(
       let commands_list: Vec<String> = plugin
         .commands()
         .iter()
-        .map(|(name, info)| format!("• <code>{}{}</code> → {}", prefix, name, info.desc))
+        .map(|(name, info)| {
+          format!(
+            "{} <code>{}{}</code> → {}",
+            DefaultStyle::info(),
+            prefix,
+            name,
+            info.desc
+          )
+        })
         .collect();
 
-      let section = format!("{}:\n{}", plugin_name, commands_list.join("\n"));
+      let section = format!(
+        "{} {}:\n{}",
+        DefaultStyle::bullet(),
+        plugin_name,
+        commands_list.join("\n")
+      );
       sections.push(section);
     }
 
@@ -109,68 +154,8 @@ pub async fn on_help(
     .send_message(chat_id, help_text)
     .parse_mode(teloxide::types::ParseMode::Html)
     .await;
-}
 
-pub async fn on_legacy_help(
-  bot: Bot,
-  msg: Message,
-  cmd: command::Command,
-  _ctx: Weak<Mutex<context::Context>>,
-) {
-  let chat_id = msg.chat.id;
-
-  let ctx = match _ctx.upgrade() {
-    Some(ctx) => ctx,
-    None => {
-      log::error!("context disposed");
-      let _ = bot.send_message(chat_id, "⨯ Context disposed").await;
-      return;
-    }
-  };
-
-  let ctx_guard: tokio::sync::MutexGuard<'_, context::Context> = ctx.lock().await;
-
-  let dp_guard = ctx_guard.dp.lock().await;
-
-  let help_text = if let Some(command_name) = cmd.args.get(0) {
-    if let Some(info) = dp_guard.command_handlers.get(command_name) {
-      let args_desc: Vec<String> = info
-        .args
-        .iter()
-        .map(|arg| {
-          format!(
-            "  • <b>{}</b> [<i>{:?}</i>] — {}",
-            arg.name, arg.requirement, arg.description
-          )
-        })
-        .collect();
-
-      let prefix = ctx_guard.cfg.lock().await.get_prefixes()[0];
-      format!(
-                " ‣ Command <code>{}{}</code>\n ‣ Description: <b>{}</b>\n ‣ Arguments: \n{}\n ‣ Reply: <i>{:?}</i>",
-                prefix,
-                command_name,
-                info.desc,
-                args_desc.join("\n"),
-                info.reply
-            )
-    } else {
-      format!("Command <b>{}</b> not found", command_name)
-    }
-  } else {
-    let prefix = ctx_guard.cfg.lock().await.get_prefixes()[0];
-    dp_guard
-      .command_handlers
-      .iter()
-      .map(|(name, info)| format!(" ‣ <code>{}{}</code> - {}", prefix, name, info.desc))
-      .collect::<Vec<_>>()
-      .join("\n")
-  };
-
-  let _ = bot
-    .send_message(chat_id, help_text)
-    .parse_mode(teloxide::types::ParseMode::Html)
-    .await;
+  Ok(())
 }
 
 async fn handle_role_change(
@@ -179,7 +164,7 @@ async fn handle_role_change(
   cmd: command::Command,
   _ctx: Weak<Mutex<context::Context>>,
   add: bool,
-) {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
   let chat_id = msg.chat.id;
   let bot = bot.clone();
   let args = &cmd.args;
@@ -187,9 +172,7 @@ async fn handle_role_change(
   let ctx = match _ctx.upgrade() {
     Some(ctx) => ctx,
     None => {
-      log::error!("Context disposed");
-      let _ = bot.send_message(chat_id, "⨯ Context disposed").await;
-      return;
+      return Err(error::emit(bot.clone(), msg.clone(), error::Error::ContextDisposed).await);
     }
   };
 
@@ -203,16 +186,26 @@ async fn handle_role_change(
     )
   } else {
     if args.len() < 2 {
-      let _ = bot
-        .send_message(chat_id, "⨯ Usage: /role <user_id> <role>")
-        .await;
-      return;
+      return Err(
+        error::emit(
+          bot.clone(),
+          msg.clone(),
+          CoreError::InvalidCommandUsage("/role <user_id> <role>".to_string()),
+        )
+        .await,
+      );
     }
     let user_id = match parsers::parse_uid(&args[0]) {
       Ok(id) => id,
       Err(_) => {
-        let _ = bot.send_message(chat_id, "⨯ Invalid user ID").await;
-        return;
+        return Err(
+          error::emit(
+            bot.clone(),
+            msg.clone(),
+            CoreError::InvalidOption("user_id".to_string()),
+          )
+          .await,
+        );
       }
     };
     (user_id, args.get(1).map(|s| s.as_str()))
@@ -222,15 +215,25 @@ async fn handle_role_change(
     Some(r) => match parsers::parse_permission(r) {
       Ok(r) => r,
       Err(_) => {
-        let _ = bot
-          .send_message(chat_id, format!("⨯ Unknown role: {}", r))
-          .await;
-        return;
+        return Err(
+          error::emit(
+            bot.clone(),
+            msg.clone(),
+            CoreError::UnknownOption(format!("role {}", r)),
+          )
+          .await,
+        );
       }
     },
     None => {
-      let _ = bot.send_message(chat_id, "⨯ Role not specified").await;
-      return;
+      return Err(
+        error::emit(
+          bot.clone(),
+          msg.clone(),
+          CoreError::OptionNotSpecified("role".to_string()),
+        )
+        .await,
+      );
     }
   };
 
@@ -242,14 +245,19 @@ async fn handle_role_change(
 
   let action = if add { "added to" } else { "removed from" };
   let msg_text = format!(
-    "‣ Role <b>{:?}</b> successfully {} user <b>{}</b>",
-    role, action, user_id
+    "{} Role <b>{:?}</b> successfully {} user <b>{}</b>",
+    DefaultStyle::info(),
+    role,
+    action,
+    user_id
   );
 
   let _ = bot
     .send_message(chat_id, msg_text)
     .parse_mode(teloxide::types::ParseMode::Html)
     .await;
+
+  Ok(())
 }
 
 pub async fn on_addrole(
@@ -257,8 +265,8 @@ pub async fn on_addrole(
   msg: Message,
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
-) {
-  handle_role_change(bot, msg, cmd, ctx, true).await;
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  handle_role_change(bot, msg, cmd, ctx, true).await
 }
 
 pub async fn on_remrole(
@@ -266,8 +274,8 @@ pub async fn on_remrole(
   msg: Message,
   cmd: command::Command,
   ctx: Weak<Mutex<context::Context>>,
-) {
-  handle_role_change(bot, msg, cmd, ctx, false).await;
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+  handle_role_change(bot, msg, cmd, ctx, false).await
 }
 
 pub struct CorePlugin {}
@@ -309,7 +317,7 @@ impl plugin::Plugin for CorePlugin {
       )],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
         tokio::spawn(async move {
-          on_help(_bot, _msg, _cmd, _ctx).await;
+          on_help(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
         });
       }),
     );
@@ -332,7 +340,7 @@ impl plugin::Plugin for CorePlugin {
       ],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
         tokio::spawn(async move {
-          on_addrole(_bot, _msg, _cmd, _ctx).await;
+          on_addrole(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
         });
       }),
     );
@@ -355,7 +363,7 @@ impl plugin::Plugin for CorePlugin {
       ],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
         tokio::spawn(async move {
-          on_remrole(_bot, _msg, _cmd, _ctx).await;
+          on_remrole(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
         });
       }),
     );
