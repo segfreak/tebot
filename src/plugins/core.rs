@@ -44,8 +44,10 @@ pub async fn on_id(
   msg: Message,
   _cmd: command::Command,
   _ctx: Weak<tokio::sync::Mutex<context::Context>>,
-) {
+) -> anyhow::Result<()> {
   let chat_id = msg.chat.id;
+
+  let _style = style::get_style(_ctx.clone()).await;
 
   let mut text = String::new();
 
@@ -54,7 +56,8 @@ pub async fn on_id(
   if let Some(reply) = msg.reply_to_message() {
     let replied_user_id = reply.from.as_ref().map(|u| u.id).unwrap_or(UserId(0));
     text.push_str(&format!(
-      "‣ <b>User ID</b>: <code>{}</code>\n",
+      "{} <b>User ID</b>: <code>{}</code>\n",
+      _style.bullet(),
       replied_user_id
     ));
   }
@@ -63,6 +66,8 @@ pub async fn on_id(
     .send_message(chat_id, text)
     .parse_mode(teloxide::types::ParseMode::Html)
     .await;
+
+  Ok(())
 }
 
 pub async fn on_help(
@@ -195,7 +200,7 @@ impl plugin::Plugin for CorePlugin {
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
         tokio::spawn(async move {
-          on_id(_bot, _msg, _cmd, _ctx).await;
+          on_id(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
         });
       }),
     );
