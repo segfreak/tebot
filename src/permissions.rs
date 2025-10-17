@@ -212,7 +212,7 @@ impl PermissionManager {
 
   pub fn snapshot(&self) -> anyhow::Result<PermissionMap> {
     let result: PermissionMap = self.perm_iter()?.into_iter().collect();
-    log::debug!("snapshot() returned {} entries", result.len());
+    log::trace!("snapshot() returned {} entries", result.len());
     Ok(result)
   }
 
