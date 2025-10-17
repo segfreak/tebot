@@ -35,9 +35,6 @@ impl Context {
     dp: Arc<tokio::sync::Mutex<Dispatcher>>,
     style: Arc<dyn DynStyle>,
   ) -> Self {
-    log::trace!(
-      "creating new context with config, database pool, permission manager, bot, dispatcher and style"
-    );
     Self {
       cfg,
       db,

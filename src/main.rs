@@ -36,26 +36,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   dotenv().ok();
   env_logger::init();
 
-  log::trace!("initializing configuration");
   let cfg = Config::new_arc_mutex(env::get_token(), env::get_prefixes());
-
-  log::trace!("setting up database connection pool");
   let _conn_mgr = SqliteConnectionManager::file(env::get_db_path());
   let pool = Arc::new(Pool::new(_conn_mgr).unwrap());
-
-  log::trace!("initializing permission manager");
   let perm_mgr = PermissionManager::new_arc_mutex(pool.clone());
-
-  log::trace!("creating bot instance");
   let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
-
-  log::trace!("creating dispatcher");
   let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
-
-  log::trace!("creating style");
   let style = Arc::new(style::DefaultStyle);
-
-  log::trace!("creating context");
   let ctx = Context::new_arc_mutex(
     cfg.clone(),
     pool.clone(),
@@ -72,7 +59,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   }
 
   {
-    log::trace!("linking dispatcher to context");
     dp.lock().await.context = Arc::downgrade(&ctx);
   }
 
@@ -103,6 +89,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     .dispatch()
     .await;
 
-  log::trace!("shutdown complete");
+  log::trace!("shutdown");
   Ok(())
 }

@@ -11,11 +11,6 @@ pub struct Command {
 
 impl Command {
   pub fn with_prefix(s: &str, prefix: char) -> Option<Self> {
-    log::trace!(
-      "parsing command from string '{}' with prefix '{}'",
-      s,
-      prefix
-    );
     let mut chars = s.chars().peekable();
     let mut parts = Vec::new();
     let mut current = String::new();
