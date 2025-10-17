@@ -52,6 +52,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   log::trace!("creating dispatcher");
   let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
 
+  log::trace!("creating style");
+  let style = Arc::new(style::DefaultDynStyle);
+
   log::trace!("creating context");
   let ctx = Context::new_arc_mutex(
     cfg.clone(),
@@ -59,6 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     perm_mgr.clone(),
     bot.clone(),
     dp.clone(),
+    style.clone(),
   );
 
   {

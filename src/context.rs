@@ -1,14 +1,19 @@
+use derivative::Derivative;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
+use crate::style::DynStyle;
+
 use super::config::Config;
 use super::dispatcher::Dispatcher;
 use super::permissions::PermissionManager;
+use super::style;
 
-#[derive(Debug)]
+#[derive(Derivative)]
+#[derivative(Debug)]
 pub struct Context {
   pub cfg: Arc<Mutex<Config>>,
   pub db: Arc<Pool<SqliteConnectionManager>>,
@@ -16,6 +21,9 @@ pub struct Context {
   pub bot: Arc<teloxide::Bot>,
 
   pub dp: Arc<tokio::sync::Mutex<Dispatcher>>,
+
+  #[derivative(Debug = "ignore")]
+  pub style: Arc<dyn style::DynStyle>,
 }
 
 impl Context {
@@ -25,9 +33,10 @@ impl Context {
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
     dp: Arc<tokio::sync::Mutex<Dispatcher>>,
+    style: Arc<dyn DynStyle>,
   ) -> Self {
     log::trace!(
-      "creating new context with config, database pool, permission manager, bot, and dispatcher"
+      "creating new context with config, database pool, permission manager, bot, dispatcher and style"
     );
     Self {
       cfg,
@@ -35,6 +44,7 @@ impl Context {
       perm_mgr,
       bot,
       dp,
+      style,
     }
   }
 
@@ -44,7 +54,8 @@ impl Context {
     perm_mgr: Arc<Mutex<PermissionManager>>,
     bot: Arc<teloxide::Bot>,
     dp: Arc<tokio::sync::Mutex<Dispatcher>>,
+    style: Arc<dyn DynStyle>,
   ) -> Arc<Mutex<Self>> {
-    Arc::new(Mutex::new(Self::new(cfg, db, perm_mgr, bot, dp)))
+    Arc::new(Mutex::new(Self::new(cfg, db, perm_mgr, bot, dp, style)))
   }
 }

@@ -14,16 +14,20 @@ pub enum Error {
 }
 
 pub async fn emit(
-  bot: teloxide::Bot,
-  msg: teloxide::prelude::Message,
+  _bot: Option<teloxide::Bot>,
+  _msg: Option<teloxide::prelude::Message>,
   err: impl std::error::Error + Send + Sync + 'static,
 ) -> Box<dyn std::error::Error + Send + Sync> {
   let err_boxed: Box<dyn std::error::Error + Send + Sync> = Box::new(err);
-  let _ = bot
-    .send_message(
-      msg.chat.id,
-      format!("{} {}", DefaultStyle::err(), err_boxed),
-    )
-    .await;
+
+  if let (Some(bot), Some(msg)) = (_bot, _msg) {
+    let _ = bot
+      .send_message(
+        msg.chat.id,
+        format!("{} {}", DefaultStyle::err(), err_boxed),
+      )
+      .await;
+  }
+
   err_boxed
 }

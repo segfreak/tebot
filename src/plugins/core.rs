@@ -11,9 +11,7 @@ use teloxide::Bot;
 
 use crate::command::{self, ArgMetadata, ArgRequirement, CommandMetadata, ReplyRequirement};
 use crate::permissions::Permission;
-use crate::{context, error, parsers, plugin};
-
-use crate::style::{DefaultStyle, Style};
+use crate::{context, error, parsers, plugin, style};
 
 #[derive(Error, Debug)]
 pub enum CoreError {
@@ -72,8 +70,19 @@ pub async fn on_help(
 
   let ctx = match _ctx.upgrade() {
     Some(ctx) => ctx,
-    None => return Err(error::emit(bot.clone(), msg.clone(), error::Error::ContextDisposed).await),
+    None => {
+      return Err(
+        error::emit(
+          Some(bot.clone()),
+          Some(msg.clone()),
+          error::Error::ContextDisposed,
+        )
+        .await,
+      )
+    }
   };
+
+  let style = style::get_style(_ctx.clone()).await;
 
   let ctx_guard = ctx.lock().await;
   let dp_guard = ctx_guard.dp.lock().await;
@@ -87,7 +96,7 @@ pub async fn on_help(
         .map(|arg| {
           format!(
             "{} {} [{}] → {}",
-            DefaultStyle::arrow(),
+            style.arrow(),
             arg.name,
             format!("{:?}", arg.requirement),
             arg.description
@@ -100,21 +109,21 @@ pub async fn on_help(
       {} Description: {}\n\
       {} Arguments:\n{}\n\
       {} Reply: <i>{:?}</i>",
-        DefaultStyle::ok(),
+        style.ok(),
         prefix,
         command_name,
-        DefaultStyle::info(),
+        style.info(),
         info.desc,
-        DefaultStyle::info(),
+        style.info(),
         args_desc.join(&format!("\n")),
-        DefaultStyle::info(),
+        style.info(),
         info.reply
       )
     } else {
       return Err(
         error::emit(
-          bot.clone(),
-          msg.clone(),
+          Some(bot.clone()),
+          Some(msg.clone()),
           CoreError::CommandNotFound(command_name.to_string()),
         )
         .await,
@@ -130,7 +139,7 @@ pub async fn on_help(
         .map(|(name, info)| {
           format!(
             "{} <code>{}{}</code> → {}",
-            DefaultStyle::info(),
+            style.info(),
             prefix,
             name,
             info.desc
@@ -140,7 +149,7 @@ pub async fn on_help(
 
       let section = format!(
         "{} {}:\n{}",
-        DefaultStyle::bullet(),
+        style.bullet(),
         plugin_name,
         commands_list.join("\n")
       );
@@ -172,9 +181,18 @@ async fn handle_role_change(
   let ctx = match _ctx.upgrade() {
     Some(ctx) => ctx,
     None => {
-      return Err(error::emit(bot.clone(), msg.clone(), error::Error::ContextDisposed).await);
+      return Err(
+        error::emit(
+          Some(bot.clone()),
+          Some(msg.clone()),
+          error::Error::ContextDisposed,
+        )
+        .await,
+      );
     }
   };
+
+  let style = style::get_style(_ctx.clone()).await;
 
   let ctx_guard = ctx.lock().await;
   let pmgr_guard = ctx_guard.perm_mgr.lock().await;
@@ -188,8 +206,8 @@ async fn handle_role_change(
     if args.len() < 2 {
       return Err(
         error::emit(
-          bot.clone(),
-          msg.clone(),
+          Some(bot.clone()),
+          Some(msg.clone()),
           CoreError::InvalidCommandUsage("/role <user_id> <role>".to_string()),
         )
         .await,
@@ -200,8 +218,8 @@ async fn handle_role_change(
       Err(_) => {
         return Err(
           error::emit(
-            bot.clone(),
-            msg.clone(),
+            Some(bot.clone()),
+            Some(msg.clone()),
             CoreError::InvalidOption("user_id".to_string()),
           )
           .await,
@@ -217,8 +235,8 @@ async fn handle_role_change(
       Err(_) => {
         return Err(
           error::emit(
-            bot.clone(),
-            msg.clone(),
+            Some(bot.clone()),
+            Some(msg.clone()),
             CoreError::UnknownOption(format!("role {}", r)),
           )
           .await,
@@ -228,8 +246,8 @@ async fn handle_role_change(
     None => {
       return Err(
         error::emit(
-          bot.clone(),
-          msg.clone(),
+          Some(bot.clone()),
+          Some(msg.clone()),
           CoreError::OptionNotSpecified("role".to_string()),
         )
         .await,
@@ -246,7 +264,7 @@ async fn handle_role_change(
   let action = if add { "added to" } else { "removed from" };
   let msg_text = format!(
     "{} Role <b>{:?}</b> successfully {} user <b>{}</b>",
-    DefaultStyle::info(),
+    style.info(),
     role,
     action,
     user_id
