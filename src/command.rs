@@ -54,7 +54,7 @@ impl Command {
     let name = match parts.get(0) {
       Some(n) => n.clone(),
       None => {
-        log::debug!("no command name found in string '{}'", s);
+        log::trace!("no command name found in string '{}'", s);
         return None;
       }
     };
