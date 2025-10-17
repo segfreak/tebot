@@ -66,6 +66,23 @@ impl PermissionManager {
       .unwrap();
   }
 
+  pub fn reset(&self, user_id: UserId) {
+    let conn = self.db.get().unwrap();
+    conn
+      .execute(
+        "DELETE FROM permissions WHERE user_id = ?1",
+        params![user_id.0],
+      )
+      .unwrap();
+
+    log::trace!("removed all permissions for user {}", user_id);
+  }
+
+  pub fn clear(&self) {
+    let conn = self.db.get().unwrap();
+    conn.execute("DELETE FROM permissions", []).unwrap();
+  }
+
   pub fn get(&self, user_id: UserId) -> Permission {
     let conn = self.db.get().unwrap();
     let perm = conn
@@ -143,5 +160,43 @@ impl PermissionManager {
     );
 
     can_access
+  }
+
+  pub fn perm_iter(&self) -> Vec<(UserId, Permission)> {
+    let conn = self.db.get().unwrap();
+    let mut stmt = conn
+      .prepare("SELECT user_id, flags FROM permissions")
+      .unwrap();
+
+    stmt
+      .query_map([], |row| {
+        let user_id: u64 = row.get(0)?;
+        let flags: u32 = row.get(1)?;
+        Ok((UserId(user_id), Permission::from_bits_truncate(flags)))
+      })
+      .unwrap()
+      .filter_map(Result::ok)
+      .collect()
+  }
+
+  pub fn load_snapshot_iter(&self, snapshot: &PermissionMap) {
+    let conn = self.db.get().unwrap();
+    for (user_id, perm) in snapshot {
+      conn
+        .execute(
+          "INSERT INTO permissions (user_id, flags) VALUES (?1, ?2)",
+          params![user_id.0, perm.bits()],
+        )
+        .unwrap();
+    }
+  }
+
+  pub fn snapshot(&self) -> PermissionMap {
+    self.perm_iter().into_iter().collect()
+  }
+
+  pub fn load_snapshot(&self, snapshot: &PermissionMap) {
+    self.clear();
+    self.load_snapshot_iter(snapshot);
   }
 }
