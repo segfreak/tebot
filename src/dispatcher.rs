@@ -33,7 +33,7 @@ impl Dispatcher {
     }
   }
 
-  pub fn new_arc_mutex(
+  pub fn new_shared(
     context: Weak<Mutex<super::context::Context>>,
   ) -> Arc<tokio::sync::Mutex<Self>> {
     Arc::new(tokio::sync::Mutex::new(Self::new(context)))

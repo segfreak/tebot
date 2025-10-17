@@ -25,7 +25,7 @@ impl Config {
     Self { token, prefixes }
   }
 
-  pub fn new_arc_mutex(token: String, prefixes: Vec<char>) -> Arc<Mutex<Self>> {
+  pub fn new_shared(token: String, prefixes: Vec<char>) -> Arc<Mutex<Self>> {
     Arc::new(Mutex::new(Self::new(token, prefixes)))
   }
 

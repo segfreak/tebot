@@ -49,7 +49,7 @@ impl PermissionManager {
     Ok(mgr)
   }
 
-  pub fn new_arc_mutex(db: Arc<Pool<SqliteConnectionManager>>) -> anyhow::Result<Arc<Mutex<Self>>> {
+  pub fn new_shared(db: Arc<Pool<SqliteConnectionManager>>) -> anyhow::Result<Arc<Mutex<Self>>> {
     let mgr = Self::new(db)?;
     Ok(Arc::new(Mutex::new(mgr)))
   }

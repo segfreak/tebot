@@ -45,7 +45,7 @@ impl Context {
     }
   }
 
-  pub fn new_arc_mutex(
+  pub fn new_shared(
     cfg: Arc<Mutex<Config>>,
     db: Arc<Pool<SqliteConnectionManager>>,
     perm_mgr: Arc<Mutex<PermissionManager>>,

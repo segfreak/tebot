@@ -36,16 +36,16 @@ async fn main() -> anyhow::Result<()> {
   dotenv().ok();
   env_logger::init();
 
-  let cfg = Config::new_arc_mutex(env::get_token(), env::get_prefixes());
+  let cfg = Config::new_shared(env::get_token(), env::get_prefixes());
   let _conn_mgr = SqliteConnectionManager::file(env::get_db_path());
 
   let pool = Arc::new(Pool::new(_conn_mgr)?);
 
-  let perm_mgr = PermissionManager::new_arc_mutex(pool.clone())?;
+  let perm_mgr = PermissionManager::new_shared(pool.clone())?;
   let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
-  let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
+  let dp = dispatcher::Dispatcher::new_shared(Weak::new());
   let style = Arc::new(style::DefaultStyle);
-  let ctx = Context::new_arc_mutex(
+  let ctx = Context::new_shared(
     cfg.clone(),
     pool.clone(),
     perm_mgr.clone(),
