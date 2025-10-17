@@ -5,11 +5,11 @@ use tokio::sync::Mutex;
 use crate::context::Context;
 
 pub trait Style: Send + Sync {
-  fn err() -> &'static str;
-  fn ok() -> &'static str;
-  fn bullet() -> &'static str;
-  fn info() -> &'static str;
-  fn arrow() -> &'static str;
+  fn s_err() -> &'static str;
+  fn s_ok() -> &'static str;
+  fn s_bullet() -> &'static str;
+  fn s_info() -> &'static str;
+  fn s_arrow() -> &'static str;
 }
 
 pub trait DynStyle: Send + Sync {
@@ -26,45 +26,44 @@ pub async fn get_style(ctx: Weak<Mutex<Context>>) -> Arc<dyn DynStyle> {
       let ctx_guard = ctx.lock().await;
       return ctx_guard.style.clone();
     }
-    None => return Arc::new(DefaultDynStyle),
+    None => return Arc::new(DefaultStyle),
   };
 }
 
 pub struct DefaultStyle;
-pub struct DefaultDynStyle;
 
 impl Style for DefaultStyle {
-  fn err() -> &'static str {
+  fn s_err() -> &'static str {
     "✕"
   }
-  fn ok() -> &'static str {
+  fn s_ok() -> &'static str {
     "✓"
   }
-  fn bullet() -> &'static str {
+  fn s_bullet() -> &'static str {
     "⇛"
   }
-  fn info() -> &'static str {
+  fn s_info() -> &'static str {
     "⇒"
   }
-  fn arrow() -> &'static str {
+  fn s_arrow() -> &'static str {
     "⨠"
   }
 }
 
-impl DynStyle for DefaultDynStyle {
+impl DynStyle for DefaultStyle {
   fn err(&self) -> &'static str {
-    DefaultStyle::err()
+    Self::s_err()
   }
   fn ok(&self) -> &'static str {
-    DefaultStyle::ok()
+    Self::s_ok()
   }
   fn bullet(&self) -> &'static str {
-    DefaultStyle::bullet()
+    Self::s_bullet()
   }
   fn info(&self) -> &'static str {
-    DefaultStyle::info()
+    Self::s_info()
   }
   fn arrow(&self) -> &'static str {
-    DefaultStyle::arrow()
+    Self::s_arrow()
   }
 }

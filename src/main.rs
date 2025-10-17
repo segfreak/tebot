@@ -53,7 +53,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
   let dp = dispatcher::Dispatcher::new_arc_mutex(Weak::new());
 
   log::trace!("creating style");
-  let style = Arc::new(style::DefaultDynStyle);
+  let style = Arc::new(style::DefaultStyle);
 
   log::trace!("creating context");
   let ctx = Context::new_arc_mutex(

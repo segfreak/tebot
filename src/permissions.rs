@@ -76,7 +76,7 @@ impl PermissionManager {
       )
       .unwrap_or(Permission::NONE);
 
-    log::debug!("get permission for user {}: {:?}", user_id, perm);
+    log::trace!("get permission for user {}: {:?}", user_id, perm);
 
     perm
   }
@@ -92,14 +92,14 @@ impl PermissionManager {
       )
       .unwrap();
 
-    log::debug!("set permission for user {}: {:?}", user_id, perm);
+    log::trace!("set permission for user {}: {:?}", user_id, perm);
   }
 
   pub fn grant(&self, user_id: UserId, perm: Permission) {
     let current = self.get(user_id);
     self.set(user_id, current | perm);
 
-    log::debug!(
+    log::trace!(
       "grant permission {:?} to user {}, previous {:?}",
       perm,
       user_id,
@@ -111,7 +111,7 @@ impl PermissionManager {
     let current = self.get(user_id);
     self.set(user_id, current - perm);
 
-    log::debug!(
+    log::trace!(
       "revoke permission {:?} from user {}, previous {:?}",
       perm,
       user_id,
@@ -122,7 +122,7 @@ impl PermissionManager {
   pub fn has(&self, user_id: UserId, perm: Permission) -> bool {
     let has_perm = self.get(user_id).contains(perm);
 
-    log::debug!(
+    log::trace!(
       "check if user {} has permission {:?}: {}",
       user_id,
       perm,
@@ -135,7 +135,7 @@ impl PermissionManager {
   pub fn can(&self, user_id: UserId, perm: Permission) -> bool {
     let can_access = self.get(user_id).level() >= perm.level();
 
-    log::debug!(
+    log::trace!(
       "check if user {} can access level {:?}: {}",
       user_id,
       perm,

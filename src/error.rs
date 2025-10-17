@@ -24,7 +24,7 @@ pub async fn emit(
     let _ = bot
       .send_message(
         msg.chat.id,
-        format!("{} {}", DefaultStyle::err(), err_boxed),
+        format!("{} {}", DefaultStyle::s_err(), err_boxed),
       )
       .await;
   }
