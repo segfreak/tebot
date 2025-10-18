@@ -1,5 +1,4 @@
 use std::sync::{Arc, Weak};
-use std::time::Duration;
 use thiserror::Error;
 
 use indexmap::IndexMap;
@@ -11,7 +10,7 @@ use teloxide::Bot;
 
 use crate::command::{self, ArgMetadata, ArgRequirement, CommandMetadata, ReplyRequirement};
 use crate::permissions::Permission;
-use crate::{context, error, plugin, style};
+use crate::{context, error, formatter, metadata, plugin, style};
 
 #[derive(Error, Debug)]
 pub enum CoreError {
@@ -181,21 +180,6 @@ async fn on_help(
   Ok(())
 }
 
-fn format_duration(dur: Duration) -> String {
-  let secs = dur.as_secs();
-  let hours = secs / 3600;
-  let minutes = (secs % 3600) / 60;
-  let seconds = secs % 60;
-
-  if hours > 0 {
-    format!("{}h {}m {}s", hours, minutes, seconds)
-  } else if minutes > 0 {
-    format!("{}m {}s", minutes, seconds)
-  } else {
-    format!("{}s", seconds)
-  }
-}
-
 async fn on_uptime(
   _bot: Bot,
   _msg: Message,
@@ -204,11 +188,32 @@ async fn on_uptime(
 ) -> anyhow::Result<()> {
   let _style = style::get_style(_ctx.clone()).await;
   let _uptime = crate::START_TIME.elapsed();
-  let _formatted_uptime = format_duration(_uptime);
+  let _formatted_uptime = formatter::format_duration(_uptime);
   let _msg_text = format!(
     "{} <b>Uptime</b>: <b>{}</b>",
     _style.arrow(),
     _formatted_uptime
+  );
+  let _ = _bot
+    .send_message(_msg.chat.id, _msg_text)
+    .parse_mode(teloxide::types::ParseMode::Html)
+    .await;
+  Ok(())
+}
+
+async fn on_package(
+  _bot: Bot,
+  _msg: Message,
+  _cmd: command::Command,
+  _ctx: Weak<tokio::sync::Mutex<context::Context>>,
+) -> anyhow::Result<()> {
+  let _style = style::get_style(_ctx.clone()).await;
+  let _pkg = metadata::Package::from_env()?;
+  let _formatted_pkg = formatter::format_package(_pkg);
+  let _msg_text = format!(
+    "{} <b>Package</b>: <b>{}</b>",
+    _style.arrow(),
+    _formatted_pkg
   );
   let _ = _bot
     .send_message(_msg.chat.id, _msg_text)
@@ -232,6 +237,7 @@ async fn on_shutdown(
 
   std::process::exit(0);
 }
+
 pub struct CorePlugin {}
 
 impl CorePlugin {
@@ -300,10 +306,23 @@ impl plugin::Plugin for CorePlugin {
       }),
     );
 
+    let package_cmd = CommandMetadata::new(
+      Permission::USER,
+      "Shows the crate package metadata".to_string(),
+      ReplyRequirement::None,
+      vec![],
+      Arc::new(|_bot, _msg, _cmd, _ctx| {
+        tokio::spawn(async move {
+          on_package(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
+        });
+      }),
+    );
+
     cmds.insert("id".to_string(), id_cmd);
     cmds.insert("help".to_string(), help_cmd);
     cmds.insert("shutdown".to_string(), shutdown_cmd);
     cmds.insert("uptime".to_string(), uptime_cmd);
+    cmds.insert("package".to_string(), package_cmd);
 
     cmds
   }
