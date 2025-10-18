@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::metadata::{Package, Version};
+use super::metadata::{Package, Version};
 
 pub fn format_version(ver: Version) -> String {
   format!("v{}.{}.{}", ver.major, ver.minor, ver.patch)

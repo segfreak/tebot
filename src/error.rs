@@ -1,6 +1,6 @@
 use teloxide::prelude::Requester;
 
-use crate::style::{DefaultStyle, Style};
+use crate::utils::style::{DefaultStyle, Style};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {

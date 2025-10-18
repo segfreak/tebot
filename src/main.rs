@@ -1,22 +1,14 @@
-pub mod command;
-pub mod config;
-pub mod context;
-pub mod dispatcher;
-pub mod env;
 pub mod error;
-pub mod formatter;
-pub mod handler;
-pub mod metadata;
-pub mod parsers;
+
+pub mod bot;
 pub mod permissions;
-pub mod plugin;
-pub mod style;
+pub mod utils;
 
 pub mod plugins;
 
-use config::Config;
-use context::Context;
-use permissions::PermissionManager;
+use crate::permissions::{manager::PermissionManager, types::Permission};
+
+use bot::{config::Config, context::Context, dispatcher, plugin};
 
 use teloxide::{
   dptree,
@@ -34,8 +26,6 @@ use dotenvy::dotenv;
 use once_cell::sync::Lazy;
 use std::time::Instant;
 
-use crate::permissions::Permission;
-
 pub static START_TIME: Lazy<Instant> = Lazy::new(|| {
   log::debug!("initializing start time");
   Instant::now()
@@ -50,15 +40,18 @@ async fn main() -> anyhow::Result<()> {
   // because Lazy is only evaluated on first use.
   let _ = START_TIME.elapsed();
 
-  let cfg = Config::new_shared(env::get_token().await, env::get_prefixes().await);
-  let _conn_mgr = SqliteConnectionManager::file(env::get_db_path().await);
+  let cfg = Config::new_shared(
+    utils::env::get_token().await,
+    utils::env::get_prefixes().await,
+  );
+  let _conn_mgr = SqliteConnectionManager::file(utils::env::get_db_path().await);
 
   let pool = Arc::new(Pool::new(_conn_mgr)?);
 
   let perm_mgr = PermissionManager::new_shared(pool.clone())?;
   let bot = Arc::new(Bot::new(cfg.lock().await.get_token()));
   let dp = dispatcher::Dispatcher::new_shared(Weak::new());
-  let style = Arc::new(style::DefaultStyle);
+  let style = Arc::new(utils::style::DefaultStyle);
   let ctx = Arc::new(Mutex::new(Context::new(
     cfg.clone(),
     pool.clone(),
@@ -69,7 +62,7 @@ async fn main() -> anyhow::Result<()> {
   )));
 
   {
-    if let Ok(owner_id) = env::get_owner_id().await {
+    if let Ok(owner_id) = utils::env::get_owner_id().await {
       perm_mgr.lock().await.set(owner_id, Permission::OWNER)?;
     }
   }

@@ -2,7 +2,7 @@ use std::sync::{Arc, Weak};
 
 use tokio::sync::Mutex;
 
-use crate::context::Context;
+use crate::bot::context::Context;
 
 pub trait Style: Send + Sync {
   fn s_err() -> &'static str;

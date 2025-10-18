@@ -1,7 +1,8 @@
 use derivative::Derivative;
 
+use crate::permissions::types::Permission;
+
 use super::handler;
-use super::permissions;
 
 pub struct Command {
   pub prefix: char,
@@ -117,7 +118,7 @@ impl ArgMetadata {
 #[derive(Clone, Derivative)]
 #[derivative(Debug)]
 pub struct CommandMetadata {
-  pub perm: permissions::Permission,
+  pub perm: Permission,
   pub desc: String,
 
   pub reply: ReplyRequirement,
@@ -129,7 +130,7 @@ pub struct CommandMetadata {
 
 impl CommandMetadata {
   pub fn new(
-    perm: permissions::Permission,
+    perm: Permission,
     desc: String,
     reply: ReplyRequirement,
     args: Vec<ArgMetadata>,

@@ -8,11 +8,15 @@ use teloxide::prelude::Requester;
 use teloxide::types::{Message, UserId};
 use teloxide::Bot;
 
+use crate::bot::command::{self, ArgMetadata, ArgRequirement, CommandMetadata, ReplyRequirement};
+use crate::permissions::types::Permission;
 use crate::plugins::core::CoreError;
 
-use crate::command::{self, ArgMetadata, ArgRequirement, CommandMetadata, ReplyRequirement};
-use crate::permissions::Permission;
-use crate::{context, error, parsers, plugin, style};
+use crate::{
+  bot::{context, handler, plugin},
+  error,
+  utils::{parsers, style},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PermissionEvent {
@@ -398,7 +402,7 @@ impl plugin::Plugin for AccessPlugin {
     "access"
   }
 
-  fn commands(&self) -> indexmap::IndexMap<String, crate::command::CommandMetadata> {
+  fn commands(&self) -> indexmap::IndexMap<String, command::CommandMetadata> {
     let mut cmds = IndexMap::new();
 
     let grant_cmd = CommandMetadata::new(
@@ -511,7 +515,7 @@ impl plugin::Plugin for AccessPlugin {
     cmds
   }
 
-  fn update_handlers(&self) -> Vec<crate::handler::UpdateHandler> {
+  fn update_handlers(&self) -> Vec<handler::UpdateHandler> {
     Vec::new()
   }
 }

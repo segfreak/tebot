@@ -1,7 +1,7 @@
 use anyhow::{anyhow, Context};
 use teloxide::prelude::UserId;
 
-use super::permissions::{Permission, PermissionMap};
+use crate::permissions::types::{Permission, PermissionMap};
 
 pub async fn parse_permission(s: &str) -> anyhow::Result<Permission> {
   let s = s.trim();
