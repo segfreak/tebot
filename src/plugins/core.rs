@@ -1,9 +1,10 @@
 use std::sync::{Arc, Weak};
+use sysinfo::System;
 use thiserror::Error;
 
 use indexmap::IndexMap;
 
-use teloxide::payloads::SendMessageSetters;
+use teloxide::payloads::*;
 use teloxide::prelude::Requester;
 use teloxide::types::{Message, UserId};
 use teloxide::Bot;
@@ -243,6 +244,108 @@ async fn on_shutdown(
   std::process::exit(0);
 }
 
+async fn on_ping(
+  _bot: Bot,
+  _msg: Message,
+  _cmd: command::Command,
+  _ctx: Weak<tokio::sync::Mutex<context::Context>>,
+) -> anyhow::Result<()> {
+  let _style = style::get_style(_ctx.clone()).await;
+  let _start = std::time::Instant::now();
+
+  let _ping_msg = _bot
+    .send_message(_msg.chat.id, format!("{} Pinging...", _style.arrow()))
+    .parse_mode(teloxide::types::ParseMode::Html)
+    .await?;
+
+  let _latency = _start.elapsed();
+
+  let _msg_text = format!(
+    "{} <b>Pong!</b> Latency: <code>{}ms</code>",
+    _style.ok(),
+    _latency.as_millis()
+  );
+
+  let _ = _bot
+    .edit_message_text(_msg.chat.id, _ping_msg.id, _msg_text)
+    .parse_mode(teloxide::types::ParseMode::Html)
+    .await;
+
+  Ok(())
+}
+
+async fn on_sysinfo(
+  _bot: Bot,
+  _msg: Message,
+  _cmd: command::Command,
+  _ctx: Weak<tokio::sync::Mutex<context::Context>>,
+) -> anyhow::Result<()> {
+  let _style = style::get_style(_ctx.clone()).await;
+
+  let mut _sys = System::new_all();
+  _sys.refresh_all();
+
+  let _cpu_count = _sys.cpus().len();
+  let _cpu_brand = _sys
+    .cpus()
+    .first()
+    .map(|cpu| cpu.brand())
+    .unwrap_or("Unknown");
+  let _cpu_usage = _sys.global_cpu_usage();
+
+  let _total_memory = _sys.total_memory() / 1024 / 1024;
+  let _used_memory = _sys.used_memory() / 1024 / 1024;
+  let _memory_usage = (_used_memory as f64 / _total_memory as f64) * 100.0;
+
+  let _pid = sysinfo::get_current_pid().ok();
+  let _process_memory = _pid
+    .and_then(|p| _sys.process(p))
+    .map(|proc| proc.memory() / 1024 / 1024)
+    .unwrap_or(0);
+
+  let _os_name = System::name().unwrap_or_else(|| "Unknown".to_string());
+  let _os_version = System::os_version().unwrap_or_else(|| "Unknown".to_string());
+  let _kernel_version = System::kernel_version().unwrap_or_else(|| "Unknown".to_string());
+
+  let _msg_text = format!(
+    "{} <b>System Information</b>\n\n\
+    {} <b>OS</b>: {} {}\n\
+    {} <b>Kernel</b>: {}\n\n\
+    {} <b>CPU</b>: {}\n\
+    {} <b>Cores</b>: {}\n\
+    {} <b>CPU Usage</b>: <code>{:.1}%</code>\n\n\
+    {} <b>Total RAM</b>: <code>{} MB</code>\n\
+    {} <b>Used RAM</b>: <code>{} MB</code> (<code>{:.1}%</code>)\n\n\
+    {} <b>Bot Process RAM</b>: <code>{} MB</code>",
+    _style.ok(),
+    _style.bullet(),
+    _os_name,
+    _os_version,
+    _style.bullet(),
+    _kernel_version,
+    _style.bullet(),
+    _cpu_brand,
+    _style.bullet(),
+    _cpu_count,
+    _style.bullet(),
+    _cpu_usage,
+    _style.bullet(),
+    _total_memory,
+    _style.bullet(),
+    _used_memory,
+    _memory_usage,
+    _style.bullet(),
+    _process_memory
+  );
+
+  let _ = _bot
+    .send_message(_msg.chat.id, _msg_text)
+    .parse_mode(teloxide::types::ParseMode::Html)
+    .await;
+
+  Ok(())
+}
+
 pub struct CorePlugin {}
 
 impl CorePlugin {
@@ -261,7 +364,7 @@ impl plugin::Plugin for CorePlugin {
 
     let id_cmd = CommandMetadata::new(
       Permission::USER,
-      "Shows chat identifier".to_string(),
+      "Get chat and user identifiers".to_string(),
       ReplyRequirement::Optional,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
@@ -273,7 +376,7 @@ impl plugin::Plugin for CorePlugin {
 
     let help_cmd = CommandMetadata::new(
       Permission::USER,
-      "Shows help information".to_string(),
+      "Display available commands and their usage".to_string(),
       ReplyRequirement::None,
       vec![ArgMetadata::new(
         "command".to_string(),
@@ -289,7 +392,7 @@ impl plugin::Plugin for CorePlugin {
 
     let shutdown_cmd = CommandMetadata::new(
       Permission::OWNER,
-      "Shuting down the bot".to_string(),
+      "Shutdown the bot process".to_string(),
       ReplyRequirement::None,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
@@ -301,7 +404,7 @@ impl plugin::Plugin for CorePlugin {
 
     let uptime_cmd = CommandMetadata::new(
       Permission::USER,
-      "Shows the uptime".to_string(),
+      "Display bot uptime since last restart".to_string(),
       ReplyRequirement::None,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
@@ -313,7 +416,7 @@ impl plugin::Plugin for CorePlugin {
 
     let package_cmd = CommandMetadata::new(
       Permission::USER,
-      "Shows the crate package metadata".to_string(),
+      "Display bot version and package information".to_string(),
       ReplyRequirement::None,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
@@ -323,11 +426,37 @@ impl plugin::Plugin for CorePlugin {
       }),
     );
 
+    let ping_cmd = CommandMetadata::new(
+      Permission::USER,
+      "Check bot response time and latency".to_string(),
+      ReplyRequirement::None,
+      vec![],
+      Arc::new(|_bot, _msg, _cmd, _ctx| {
+        tokio::spawn(async move {
+          on_ping(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
+        });
+      }),
+    );
+
+    let sysinfo_cmd = CommandMetadata::new(
+      Permission::ADMIN,
+      "Display system resources and host information".to_string(),
+      ReplyRequirement::None,
+      vec![],
+      Arc::new(|_bot, _msg, _cmd, _ctx| {
+        tokio::spawn(async move {
+          on_sysinfo(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
+        });
+      }),
+    );
+
     cmds.insert("id".to_string(), id_cmd);
     cmds.insert("help".to_string(), help_cmd);
     cmds.insert("shutdown".to_string(), shutdown_cmd);
     cmds.insert("uptime".to_string(), uptime_cmd);
     cmds.insert("package".to_string(), package_cmd);
+    cmds.insert("ping".to_string(), ping_cmd);
+    cmds.insert("sysinfo".to_string(), sysinfo_cmd);
 
     cmds
   }

@@ -407,17 +407,17 @@ impl plugin::Plugin for AccessPlugin {
 
     let grant_cmd = CommandMetadata::new(
       Permission::OWNER,
-      "Grants a permission to a user".to_string(),
+      "Grant a specific permission to a user".to_string(),
       ReplyRequirement::None,
       vec![
         ArgMetadata::new(
           "user_id".to_string(),
-          "User Id to grant perm".to_string(),
+          "User ID to grant permission to".to_string(),
           ArgRequirement::OnlyWithoutReply,
         ),
         ArgMetadata::new(
           "perm".to_string(),
-          "Permission to grant".to_string(),
+          "Permission level to grant".to_string(),
           ArgRequirement::Required,
         ),
       ],
@@ -430,17 +430,17 @@ impl plugin::Plugin for AccessPlugin {
 
     let revoke_cmd = CommandMetadata::new(
       Permission::OWNER,
-      "Rovokes a permission from a user".to_string(),
+      "Revoke a specific permission from a user".to_string(),
       ReplyRequirement::None,
       vec![
         ArgMetadata::new(
           "user_id".to_string(),
-          "User Id to revoke permission".to_string(),
+          "User ID to revoke permission from".to_string(),
           ArgRequirement::OnlyWithoutReply,
         ),
         ArgMetadata::new(
           "perm".to_string(),
-          "Permission to revoke".to_string(),
+          "Permission level to revoke".to_string(),
           ArgRequirement::Required,
         ),
       ],
@@ -453,17 +453,17 @@ impl plugin::Plugin for AccessPlugin {
 
     let set_cmd = CommandMetadata::new(
       Permission::OWNER,
-      "Sets a permission to a user".to_string(),
+      "Set user permission level (replaces all existing)".to_string(),
       ReplyRequirement::None,
       vec![
         ArgMetadata::new(
           "user_id".to_string(),
-          "User Id to set permission".to_string(),
+          "User ID to set permission for".to_string(),
           ArgRequirement::OnlyWithoutReply,
         ),
         ArgMetadata::new(
           "perm".to_string(),
-          "Permission to set".to_string(),
+          "Permission level to set".to_string(),
           ArgRequirement::Required,
         ),
       ],
@@ -476,11 +476,11 @@ impl plugin::Plugin for AccessPlugin {
 
     let reset_cmd = CommandMetadata::new(
       Permission::OWNER,
-      "Resets a user permissions".to_string(),
+      "Reset user permissions to default".to_string(),
       ReplyRequirement::None,
       vec![ArgMetadata::new(
         "user_id".to_string(),
-        "User Id to reset perm".to_string(),
+        "User ID to reset permissions for".to_string(),
         ArgRequirement::OnlyWithoutReply,
       )],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
@@ -492,11 +492,11 @@ impl plugin::Plugin for AccessPlugin {
 
     let show_cmd = CommandMetadata::new(
       Permission::OWNER,
-      "Show permissions".to_string(),
+      "Display user permissions and access level".to_string(),
       ReplyRequirement::None,
       vec![ArgMetadata::new(
         "user_id".to_string(),
-        "User Id to show permissions".to_string(),
+        "User ID to display permissions for".to_string(),
         ArgRequirement::OnlyWithoutReply,
       )],
       Arc::new(|_bot, _msg, _cmd, _ctx| {

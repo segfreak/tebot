@@ -37,7 +37,7 @@ impl Style for DefaultStyle {
     "✕"
   }
   fn s_ok() -> &'static str {
-    "✓"
+    "↯"
   }
   fn s_bullet() -> &'static str {
     "⇛"
