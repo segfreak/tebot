@@ -1,6 +1,6 @@
 [package]
 name = "tebot"
-version = "0.1.17"
+version = "0.2.0"
 edition = "2024"
 authors = ["https://github.com/segfreak"]
 repository = "https://github.com/segfreak/tebot.git"
@@ -11,6 +11,7 @@ incremental = true
 [dependencies]
 anyhow = "1.0.100"
 bitflags = { version = "2.9.4", features = ["serde"] }
+chrono = "0.4.42"
 derivative = "2.2.0"
 dotenvy = "0.15.7"
 env_logger = "0.11.8"

@@ -389,15 +389,15 @@ async fn on_show(
   Ok(())
 }
 
-pub struct AccessPlugin {}
+pub struct Plugin {}
 
-impl AccessPlugin {
+impl Plugin {
   pub fn new() -> Self {
     Self {}
   }
 }
 
-impl plugin::Plugin for AccessPlugin {
+impl plugin::Plugin for Plugin {
   fn name(&self) -> &str {
     "access"
   }
@@ -521,5 +521,5 @@ impl plugin::Plugin for AccessPlugin {
 }
 
 pub async fn get_plugin() -> plugin::PluginBox {
-  Box::new(AccessPlugin::new())
+  Box::new(Plugin::new())
 }
