@@ -56,7 +56,11 @@ async fn on_id(
 
   let mut text = String::new();
 
-  text.push_str(&format!("‣ <b>Chat ID</b>: <code>{}</code>\n", chat_id));
+  text.push_str(&format!(
+    "{} <b>Chat ID</b>: <code>{}</code>\n",
+    _style.bullet(),
+    chat_id
+  ));
 
   if let Some(reply) = msg.reply_to_message() {
     let replied_user_id = reply.from.as_ref().map(|u| u.id).unwrap_or(UserId(0));
