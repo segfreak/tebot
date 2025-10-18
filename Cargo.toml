@@ -2,7 +2,8 @@
 name = "tebot"
 version = "0.1.15"
 edition = "2024"
-authors = ["t.me/segfreak"]
+authors = ["https://github.com/segfreak"]
+repository = "https://github.com/segfreak/tebot.git"
 
 [profile.dev]
 incremental = true
