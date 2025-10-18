@@ -3,7 +3,7 @@ use std::sync::Arc;
 use indexmap::IndexMap;
 use tokio::sync::Mutex;
 
-use crate::dispatcher::Dispatcher;
+use super::dispatcher::Dispatcher;
 
 use super::command;
 use super::handler;
