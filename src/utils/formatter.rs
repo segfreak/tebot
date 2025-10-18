@@ -12,10 +12,10 @@ pub fn format_authors(authors: Vec<String>) -> String {
 
 pub fn format_package(pkg: Package) -> String {
   format!(
-    "{}-{} {}",
+    "{} {}",
     pkg.name,
     format_version(pkg.version),
-    format_authors(pkg.authors)
+    // format_authors(pkg.authors)
   )
 }
 
