@@ -13,6 +13,11 @@ pub async fn get_db_path() -> String {
   db_path
 }
 
+pub async fn get_data_dir() -> String {
+  let db_path = env::var("DATA_DIR").unwrap_or_else(|_| "data".to_string());
+  db_path
+}
+
 pub async fn get_prefixes() -> Vec<char> {
   let prefixes: Vec<char> = env::var("PREFIXES")
     .unwrap_or_else(|_| "/".to_string())

@@ -1,3 +1,4 @@
+pub mod dirs;
 pub mod env;
 pub mod formatter;
 pub mod metadata;

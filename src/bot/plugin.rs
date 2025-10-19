@@ -17,7 +17,10 @@ pub trait Plugin: Send + Sync {
   fn update_handlers(&self) -> Vec<handler::UpdateHandler>;
 }
 
-pub async fn register_all(dp: Arc<Mutex<Dispatcher>>, plugs: Vec<PluginBox>) {
+pub async fn register_all(
+  dp: Arc<Mutex<Dispatcher>>,
+  plugs: Vec<PluginBox>,
+) {
   for plug in plugs {
     let name = plug.name().to_string();
     log::debug!("registering plugin {}", name);

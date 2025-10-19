@@ -131,6 +131,6 @@ impl plugin::Plugin for Plugin {
   }
 }
 
-pub async fn get_plugin() -> plugin::PluginBox {
+pub fn get_plugin() -> plugin::PluginBox {
   Box::new(Plugin::new())
 }
