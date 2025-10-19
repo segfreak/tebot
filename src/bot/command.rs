@@ -11,7 +11,10 @@ pub struct Command {
 }
 
 impl Command {
-  pub fn with_prefix(s: &str, prefix: char) -> Option<Self> {
+  pub fn with_prefix(
+    s: &str,
+    prefix: char,
+  ) -> Option<Self> {
     let mut chars = s.chars().peekable();
     let mut parts = Vec::new();
     let mut current = String::new();
@@ -61,7 +64,10 @@ impl Command {
     Some(Self { prefix, name, args })
   }
 
-  pub fn with_prefixes<T>(s: &str, allowed: T) -> Option<Self>
+  pub fn with_prefixes<T>(
+    s: &str,
+    allowed: T,
+  ) -> Option<Self>
   where
     T: AsRef<[char]>,
   {
@@ -88,6 +94,7 @@ pub enum ArgRequirement {
 #[derive(Clone, Debug, PartialEq, PartialOrd, Ord, Eq)]
 pub enum ReplyRequirement {
   None,
+  OnlyWithoutDocument,
   Optional,
   Required,
 }
@@ -100,7 +107,11 @@ pub struct ArgMetadata {
 }
 
 impl ArgMetadata {
-  pub fn new(name: String, description: String, requirement: ArgRequirement) -> Self {
+  pub fn new(
+    name: String,
+    description: String,
+    requirement: ArgRequirement,
+  ) -> Self {
     log::trace!(
       "creating arg metadata: name='{}', description='{}', requirement={:?}",
       name,

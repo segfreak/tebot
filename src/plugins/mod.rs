@@ -1,6 +1,7 @@
 pub mod access;
 pub mod core;
 pub mod sigthief;
+pub mod storage;
 pub mod system;
 pub mod time;
 
@@ -13,5 +14,6 @@ pub async fn all() -> Vec<plugin::PluginBox> {
     time::get_plugin(),
     system::get_plugin(),
     sigthief::get_plugin(),
+    storage::get_plugin(),
   ]
 }

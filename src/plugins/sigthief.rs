@@ -1,38 +1,22 @@
-use std::path::PathBuf;
 use std::sync::{Arc, Weak};
 
 use indexmap::IndexMap;
 
-use teloxide::net::Download;
 use teloxide::payloads::*;
 use teloxide::prelude::*;
 use teloxide::types::*;
 use teloxide::Bot;
 
-use tokio::io::AsyncWriteExt;
-
 use crate::bot::command::{self, ArgMetadata, CommandMetadata, ReplyRequirement};
 use crate::error;
 use crate::permissions::types::Permission;
+use crate::utils;
 use crate::utils::dirs;
 
-use crate::plugins::core::CoreError;
 use crate::{
   bot::{context, handler, plugin},
   utils::style,
 };
-
-async fn download_file(
-  bot: &Bot,
-  file_id: FileId,
-  path: &PathBuf,
-) -> anyhow::Result<()> {
-  let file = bot.get_file(file_id).await?;
-  let mut out_file = tokio::fs::File::create(path).await?;
-  bot.download_file(&file.path, &mut out_file).await?;
-  out_file.flush().await?;
-  Ok(())
-}
 
 async fn on_extract(
   _bot: Bot,
@@ -55,7 +39,7 @@ async fn on_extract(
         error::emit(
           Some(_bot.clone()),
           Some(_msg.clone()),
-          CoreError::OptionNotSpecified("reply".to_string()),
+          error::Error::OptionNotSpecified("reply".to_string()),
         )
         .await,
       )
@@ -78,7 +62,7 @@ async fn on_extract(
     .parse_mode(ParseMode::Html)
     .await?;
 
-  download_file(&_bot, _file.file.id.clone(), &_path).await?;
+  super::storage::download_file(&_bot, _file.file.id.clone(), &_path).await?;
 
   let _sig = tokio::task::spawn_blocking({
     let _path = _path.clone();
@@ -126,27 +110,20 @@ async fn on_apply(
 ) -> anyhow::Result<()> {
   let _style = style::get_style(_ctx.clone()).await;
 
-  let _file = if let Some(_reply) = _msg.reply_to_message() {
-    _reply.document()
+  let _doc = if let Some((_doc, _source)) = utils::etc::get_document(&_msg) {
+    _doc
   } else {
-    None
-  };
-
-  let _file = match _file {
-    Some(f) => f,
-    None => {
-      return Err(
-        error::emit(
-          Some(_bot.clone()),
-          Some(_msg.clone()),
-          CoreError::OptionNotSpecified("reply".to_string()),
-        )
-        .await,
+    return Err(
+      error::emit(
+        Some(_bot.clone()),
+        Some(_msg.clone()),
+        error::Error::NotFound("document".to_string()),
       )
-    }
+      .await,
+    );
   };
 
-  let _filename = &_file
+  let _filename = &_doc
     .file_name
     .clone()
     .unwrap_or("unnammed.signed.exe".to_string());
@@ -162,7 +139,7 @@ async fn on_apply(
     .parse_mode(ParseMode::Html)
     .await?;
 
-  download_file(&_bot, _file.file.id.clone(), &_path).await?;
+  super::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
 
   if let Some(_signature) = _cmd.args.get(0) {
     let _result = tokio::task::spawn_blocking({
@@ -195,7 +172,7 @@ async fn on_apply(
       error::emit(
         Some(_bot.clone()),
         Some(_msg.clone()),
-        CoreError::OptionNotSpecified("signature".to_string()),
+        error::Error::OptionNotSpecified("signature".to_string()),
       )
       .await,
     );
@@ -248,7 +225,7 @@ impl plugin::Plugin for Plugin {
 
     let extract_cmd = CommandMetadata::new(
       Permission::ADMIN,
-      "Extract the digital signature from a PE file and save it for later use".to_string(),
+      "Extracts digital signature".to_string(),
       ReplyRequirement::Required,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
@@ -260,7 +237,7 @@ impl plugin::Plugin for Plugin {
 
     let apply_cmd = CommandMetadata::new(
       Permission::ADMIN,
-      "Apply a previously saved digital signature to a PE file".to_string(),
+      "Apply a extracted digital signature".to_string(),
       ReplyRequirement::Required,
       vec![ArgMetadata::new(
         "signature".to_string(),
@@ -276,7 +253,7 @@ impl plugin::Plugin for Plugin {
 
     let list_cmd = CommandMetadata::new(
       Permission::ADMIN,
-      "List all saved digital signature files available for use".to_string(),
+      "List all saved digital signatures".to_string(),
       ReplyRequirement::None,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {

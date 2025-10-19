@@ -6,8 +6,27 @@ use crate::utils::style::{DefaultStyle, Style};
 pub enum Error {
   #[error("context is disposed")]
   ContextDisposed,
-  // #[error(transparent)]
-  // Teloxide(#[from] teloxide::RequestError),
+
+  #[error("usage: {0}")]
+  InvalidCommandUsage(String),
+
+  #[error("invalid {0}")]
+  InvalidOption(String),
+
+  #[error("command {0} not found")]
+  CommandNotFound(String),
+
+  #[error("{0} not specified")]
+  OptionNotSpecified(String),
+
+  #[error("unknown {0}")]
+  UnknownOption(String),
+
+  #[error("{0} not found")]
+  NotFound(String),
+
+  #[error("{0} is empty")]
+  IsEmpty(String),
 }
 
 pub async fn emit(

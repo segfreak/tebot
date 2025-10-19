@@ -10,7 +10,6 @@ use teloxide::Bot;
 
 use crate::bot::command::{self, ArgMetadata, ArgRequirement, CommandMetadata, ReplyRequirement};
 use crate::permissions::types::Permission;
-use crate::plugins::core::CoreError;
 
 use crate::{
   bot::{context, handler, plugin},
@@ -62,7 +61,7 @@ async fn handle_perm_event(
         error::emit(
           Some(_bot.clone()),
           Some(_msg.clone()),
-          CoreError::OptionNotSpecified("user_id".to_string()),
+          error::Error::OptionNotSpecified("user_id".to_string()),
         )
         .await,
       );
@@ -80,7 +79,7 @@ async fn handle_perm_event(
           error::emit(
             Some(_bot.clone()),
             Some(_msg.clone()),
-            CoreError::OptionNotSpecified("permission".to_string()),
+            error::Error::OptionNotSpecified("permission".to_string()),
           )
           .await,
         );
@@ -96,7 +95,7 @@ async fn handle_perm_event(
           error::emit(
             Some(_bot.clone()),
             Some(_msg.clone()),
-            CoreError::OptionNotSpecified("permission".to_string()),
+            error::Error::OptionNotSpecified("permission".to_string()),
           )
           .await,
         );
@@ -112,7 +111,7 @@ async fn handle_perm_event(
           error::emit(
             Some(_bot.clone()),
             Some(_msg.clone()),
-            CoreError::OptionNotSpecified("permission".to_string()),
+            error::Error::OptionNotSpecified("permission".to_string()),
           )
           .await,
         );
@@ -194,7 +193,7 @@ async fn parse_user_id_and_perm(
         error::emit(
           Some(_bot.clone()),
           Some(_msg.clone()),
-          CoreError::OptionNotSpecified("user_id".to_string()),
+          error::Error::OptionNotSpecified("user_id".to_string()),
         )
         .await,
       );
@@ -209,7 +208,7 @@ async fn parse_user_id_and_perm(
             error::emit(
               Some(_bot.clone()),
               Some(_msg.clone()),
-              CoreError::InvalidOption("user_id".to_string()),
+              error::Error::InvalidOption("user_id".to_string()),
             )
             .await,
           );
@@ -234,7 +233,7 @@ async fn parse_user_id_and_perm(
           error::emit(
             Some(_bot.clone()),
             Some(_msg.clone()),
-            CoreError::OptionNotSpecified("perm".to_string()),
+            error::Error::OptionNotSpecified("perm".to_string()),
           )
           .await,
         );
@@ -248,7 +247,7 @@ async fn parse_user_id_and_perm(
           error::emit(
             Some(_bot.clone()),
             Some(_msg.clone()),
-            CoreError::UnknownOption(format!("perm {}", perm_str)),
+            error::Error::UnknownOption(format!("perm {}", perm_str)),
           )
           .await,
         );
@@ -351,7 +350,7 @@ async fn on_show(
           error::emit(
             Some(_bot.clone()),
             Some(_msg.clone()),
-            CoreError::NotFound("permissions".to_string()),
+            error::Error::NotFound("permissions".to_string()),
           )
           .await,
         )
@@ -365,7 +364,7 @@ async fn on_show(
       error::emit(
         Some(_bot.clone()),
         Some(_msg.clone()),
-        CoreError::IsEmpty("permission map".to_string()),
+        error::Error::IsEmpty("permission map".to_string()),
       )
       .await,
     );

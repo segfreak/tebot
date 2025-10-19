@@ -1,5 +1,4 @@
 use std::sync::{Arc, Weak};
-use thiserror::Error;
 
 use indexmap::IndexMap;
 
@@ -16,33 +15,6 @@ use crate::{
   error,
   utils::{formatter, metadata, style},
 };
-
-#[derive(Error, Debug)]
-pub enum CoreError {
-  #[error(transparent)]
-  Internal(#[from] error::Error),
-
-  #[error("usage: {0}")]
-  InvalidCommandUsage(String),
-
-  #[error("invalid {0}")]
-  InvalidOption(String),
-
-  #[error("command {0} not found")]
-  CommandNotFound(String),
-
-  #[error("{0} not specified")]
-  OptionNotSpecified(String),
-
-  #[error("unknown {0}")]
-  UnknownOption(String),
-
-  #[error("{0} not found")]
-  NotFound(String),
-
-  #[error("{0} is empty")]
-  IsEmpty(String),
-}
 
 async fn on_id(
   bot: Bot,
@@ -146,7 +118,7 @@ async fn on_help(
         error::emit(
           Some(bot.clone()),
           Some(msg.clone()),
-          CoreError::CommandNotFound(command_name.to_string()),
+          error::Error::CommandNotFound(command_name.to_string()),
         )
         .await,
       );
