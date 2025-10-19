@@ -34,12 +34,15 @@ impl Dispatcher {
   }
 
   pub fn new_shared(
-    context: Weak<Mutex<super::context::Context>>,
+    context: Weak<Mutex<super::context::Context>>
   ) -> Arc<tokio::sync::Mutex<Self>> {
     Arc::new(tokio::sync::Mutex::new(Self::new(context)))
   }
 
-  pub async fn register_plugin(&mut self, plugin: plugin::PluginBox) {
+  pub async fn register_plugin(
+    &mut self,
+    plugin: plugin::PluginBox,
+  ) {
     let plugin_name = plugin.name().to_string();
 
     for update in plugin.update_handlers() {
@@ -110,7 +113,7 @@ impl Dispatcher {
     bot: teloxide::Bot,
     msg: teloxide::prelude::Message,
   ) -> anyhow::Result<()> {
-    if let Some(text) = msg.text() {
+    if let Some(text) = msg.text().or(msg.caption()) {
       let prefixes = if let Some(ctx) = self.context.upgrade() {
         let ctx = ctx.lock().await;
         let cfg = ctx.cfg.lock().await;
