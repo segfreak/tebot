@@ -13,7 +13,7 @@ use crate::permissions::types::Permission;
 use crate::{
   bot::{context, handler, plugin},
   error,
-  utils::{formatter, metadata, style},
+  utils::{metadata, style},
 };
 
 async fn on_id(
@@ -161,19 +161,19 @@ async fn on_help(
   Ok(())
 }
 
-async fn on_package(
+async fn on_version(
   _bot: Bot,
   _msg: Message,
   _cmd: command::Command,
   _ctx: Weak<tokio::sync::Mutex<context::Context>>,
 ) -> anyhow::Result<()> {
   let _style = style::get_style(_ctx.clone()).await;
-  let _pkg = metadata::Package::from_env()?;
-  let _formatted_pkg = formatter::format_package(_pkg);
   let _msg_text = format!(
-    "{} <b>Package</b>: <b>{}</b>",
+    "{} <b>Package</b>: <b>{}</b>\n{} <b>Git</b>: <b>{}</b>",
     _style.arrow(),
-    _formatted_pkg
+    metadata::Package::from_env()?,
+    _style.arrow(),
+    metadata::GitMetadata::from_env()?,
   );
   let _ = _bot
     .send_message(_msg.chat.id, _msg_text)
@@ -284,14 +284,14 @@ impl plugin::Plugin for Plugin {
       }),
     );
 
-    let package_cmd = CommandMetadata::new(
+    let version_cmd = CommandMetadata::new(
       Permission::USER,
-      "Display bot version and package information".to_string(),
+      "Display all information".to_string(),
       ReplyRequirement::None,
       vec![],
       Arc::new(|_bot, _msg, _cmd, _ctx| {
         tokio::spawn(async move {
-          on_package(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
+          on_version(_bot, _msg, _cmd, _ctx).await.unwrap_or(());
         });
       }),
     );
@@ -311,7 +311,7 @@ impl plugin::Plugin for Plugin {
     cmds.insert("id".to_string(), id_cmd);
     cmds.insert("help".to_string(), help_cmd);
     cmds.insert("shutdown".to_string(), shutdown_cmd);
-    cmds.insert("package".to_string(), package_cmd);
+    cmds.insert("version".to_string(), version_cmd);
     cmds.insert("ping".to_string(), ping_cmd);
 
     cmds
