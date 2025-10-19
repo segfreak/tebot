@@ -51,13 +51,13 @@ async fn on_extract(
     .clone()
     .unwrap_or("unnammed.dll".to_string());
 
-  let mut _path = std::env::temp_dir();
+  let mut _path = super::storage::access(Some("temp")).await;
   _path.push(_filename);
 
   let mut _extract_msg = _bot
     .send_message(
       _msg.chat.id,
-      format!("{} <b>extracting signature...</b>", _style.bullet()),
+      format!("{} <b>Extracting signature...</b>", _style.bullet()),
     )
     .parse_mode(ParseMode::Html)
     .await?;
@@ -69,6 +69,8 @@ async fn on_extract(
     move || sigthief::extract_signature(&_path)
   })
   .await?;
+
+  tokio::fs::remove_dir_all(&_path).await?;
 
   match _sig {
     Ok(_sig) => {
@@ -86,7 +88,7 @@ async fn on_extract(
           _extract_msg.chat.id,
           _extract_msg.id,
           format!(
-            "{} <b>signature extracted to</b>: <code>{}</code>",
+            "{} <b>Signature extracted to</b>: <code>{}</code>",
             _style.bullet(),
             _path.to_string_lossy()
           ),
@@ -134,7 +136,7 @@ async fn on_apply(
   let mut _apply_msg = _bot
     .send_message(
       _msg.chat.id,
-      format!("{} <b>applying signature...</b>", _style.bullet()),
+      format!("{} <b>Applying signature...</b>", _style.bullet()),
     )
     .parse_mode(ParseMode::Html)
     .await?;
@@ -157,7 +159,7 @@ async fn on_apply(
         _bot.delete_message(_msg.chat.id, _apply_msg.id).await?;
         _bot
           .send_document(_msg.chat.id, InputFile::file(_path.clone()))
-          .caption(format!("{} <b>signature applied</b>", _style.bullet(),))
+          .caption(format!("{} <b>Signature applied</b>", _style.bullet(),))
           .parse_mode(ParseMode::Html)
           .await?;
 

@@ -63,12 +63,21 @@ async fn on_load(
 
   let _filename = &_doc.file_name.clone().unwrap_or("__unnammed__".to_string());
 
+  let mut _load_msg = _bot
+    .send_message(
+      _msg.chat.id,
+      format!("{} <b>Loading file...</b>", _style.bullet()),
+    )
+    .parse_mode(ParseMode::Html)
+    .await?;
+
   let _path = access(Some(_filename)).await;
   super::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
 
   let _ = _bot
-    .send_message(
+    .edit_message_text(
       _msg.chat.id,
+      _load_msg.id,
       format!(
         "{} <b>File downloaded at</b> <code>{}</code>",
         _style.bullet(),
@@ -103,11 +112,21 @@ async fn on_drop(
       );
     }
 
+    let mut _drop_msg = _bot
+      .send_message(
+        _msg.chat.id,
+        format!("{} <b>Dropping file...</b>", _style.bullet()),
+      )
+      .parse_mode(ParseMode::Html)
+      .await?;
+
     _bot
       .send_document(_msg.chat.id, InputFile::file(_path.clone()))
       .caption(format!("{} <b>Success</b>", _style.bullet(),))
       .parse_mode(ParseMode::Html)
       .await?;
+
+    _bot.delete_message(_drop_msg.chat.id, _drop_msg.id).await?;
   }
 
   Ok(())
