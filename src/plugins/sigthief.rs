@@ -51,7 +51,7 @@ async fn on_extract(
     .clone()
     .unwrap_or("unnammed.dll".to_string());
 
-  let mut _path = super::storage::access(Some("temp")).await;
+  let mut _path = dirs::temp_dir().await?;
   _path.push(_filename);
 
   let mut _extract_msg = _bot

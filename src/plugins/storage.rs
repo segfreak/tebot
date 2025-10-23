@@ -33,13 +33,6 @@ pub async fn download_file(
   Ok(())
 }
 
-pub async fn access(sub: Option<&str>) -> PathBuf {
-  if let Some(sub) = sub {
-    return dirs::root_data_dir().await.join(sub);
-  }
-  dirs::root_data_dir().await
-}
-
 async fn on_load(
   _bot: Bot,
   _msg: Message,
@@ -62,6 +55,7 @@ async fn on_load(
   };
 
   let _filename = &_doc.file_name.clone().unwrap_or("__unnammed__".to_string());
+  let _path = dirs::join_dir(Some(_filename)).await;
 
   let mut _load_msg = _bot
     .send_message(
@@ -71,7 +65,6 @@ async fn on_load(
     .parse_mode(ParseMode::Html)
     .await?;
 
-  let _path = access(Some(_filename)).await;
   super::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
 
   let _ = _bot
@@ -99,7 +92,7 @@ async fn on_drop(
   let _style = style::get_style(_ctx.clone()).await;
 
   if let Some(_file) = _cmd.args.get(0) {
-    let _path = access(Some(_file)).await;
+    let _path = dirs::join_dir(Some(_file)).await;
 
     if !_path.exists() {
       return Err(
@@ -168,7 +161,7 @@ async fn on_list(
 ) -> anyhow::Result<()> {
   let _style = style::get_style(_ctx.clone()).await;
 
-  let _root = access(None).await;
+  let _root = dirs::join_dir(None).await;
   let _tree = format_tree(_style.clone(), &_root, 0).await?;
 
   let _msg_text = format!("{} File tree:\n{}", _style.bullet(), _tree);
