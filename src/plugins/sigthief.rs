@@ -13,6 +13,7 @@ use crate::permissions::types::Permission;
 use crate::utils;
 use crate::utils::dirs;
 
+use crate::utils::etc::GetParameters;
 use crate::{
   bot::{context, handler, plugin},
   utils::style,
@@ -62,7 +63,7 @@ async fn on_extract(
     .parse_mode(ParseMode::Html)
     .await?;
 
-  super::storage::download_file(&_bot, _file.file.id.clone(), &_path).await?;
+  utils::storage::download_file(&_bot, _file.file.id.clone(), &_path).await?;
 
   let _sig = tokio::task::spawn_blocking({
     let _path = _path.clone();
@@ -112,7 +113,7 @@ async fn on_apply(
 ) -> anyhow::Result<()> {
   let _style = style::get_style(_ctx.clone()).await;
 
-  let _doc = if let Some((_doc, _source)) = utils::etc::get_document(&_msg) {
+  let _doc = if let Some((_doc, _source)) = utils::etc::get_document(&_msg, GetParameters::all()) {
     _doc
   } else {
     return Err(
@@ -141,7 +142,7 @@ async fn on_apply(
     .parse_mode(ParseMode::Html)
     .await?;
 
-  super::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
+  utils::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
 
   if let Some(_signature) = _cmd.args.get(0) {
     let _result = tokio::task::spawn_blocking({

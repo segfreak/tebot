@@ -1,6 +1,6 @@
 [package]
 name = "tebot"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2024"
 authors = ["https://github.com/segfreak"]
 repository = "https://github.com/segfreak/tebot.git"

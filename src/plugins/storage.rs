@@ -1,37 +1,24 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Weak};
 
 use indexmap::IndexMap;
 
-use teloxide::net::Download;
 use teloxide::payloads::*;
 use teloxide::prelude::*;
 use teloxide::types::*;
 
 use teloxide::Bot;
-use tokio::io::AsyncWriteExt;
 
 use crate::bot::command::{self, CommandMetadata, ReplyRequirement};
 use crate::permissions::types::Permission;
 
+use crate::utils::etc::GetParameters;
 use crate::utils::{self, dirs};
 use crate::{
   bot::{context, handler, plugin},
   error,
   utils::style,
 };
-
-pub async fn download_file(
-  bot: &Bot,
-  file_id: FileId,
-  path: &PathBuf,
-) -> anyhow::Result<()> {
-  let file = bot.get_file(file_id).await?;
-  let mut out_file = tokio::fs::File::create(path).await?;
-  bot.download_file(&file.path, &mut out_file).await?;
-  out_file.flush().await?;
-  Ok(())
-}
 
 async fn on_load(
   _bot: Bot,
@@ -41,7 +28,7 @@ async fn on_load(
 ) -> anyhow::Result<()> {
   let _style = style::get_style(_ctx.clone()).await;
 
-  let _doc = if let Some((_doc, _source)) = utils::etc::get_document(&_msg) {
+  let _doc = if let Some((_doc, _source)) = utils::etc::get_document(&_msg, GetParameters::all()) {
     _doc
   } else {
     return Err(
@@ -65,7 +52,7 @@ async fn on_load(
     .parse_mode(ParseMode::Html)
     .await?;
 
-  super::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
+  utils::storage::download_file(&_bot, _doc.file.id.clone(), &_path).await?;
 
   let _ = _bot
     .edit_message_text(
