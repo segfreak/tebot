@@ -139,12 +139,18 @@ async fn run() -> anyhow::Result<()> {
 async fn main() -> anyhow::Result<()> {
   init();
 
+  let _env_path = ".env";
+
   let cli = Cli::parse();
 
-  match cli.command.unwrap_or(Commands::Run) {
-    Commands::Configure => {
-      let _env_path = ".env";
+  let _command = if std::path::Path::new(_env_path).exists() {
+    Commands::Run
+  } else {
+    Commands::Configure
+  };
 
+  match cli.command.unwrap_or(_command) {
+    Commands::Configure => {
       if !std::path::Path::new(_env_path).exists() {
         let _def_env = r#"# === Telegram Bot Configuration ===
 BOT_TOKEN=your_bot_token_here
