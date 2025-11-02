@@ -131,7 +131,7 @@ async fn on_apply(
     .clone()
     .unwrap_or("unnammed.signed.exe".to_string());
 
-  let mut _path = std::env::temp_dir();
+  let mut _path = dirs::temp_dir().await?;
   _path.push(_filename);
 
   let mut _apply_msg = _bot
