@@ -1,39 +1,10 @@
 use std::env;
-
 use std::fmt;
 
-impl fmt::Display for Package {
-  fn fmt(
-    &self,
-    f: &mut fmt::Formatter<'_>,
-  ) -> fmt::Result {
-    write!(
-      f,
-      "{} v{}.{}.{}",
-      self.name, self.version.major, self.version.minor, self.version.patch,
-    )
-  }
-}
-
-impl fmt::Display for GitMetadata {
-  fn fmt(
-    &self,
-    f: &mut fmt::Formatter<'_>,
-  ) -> fmt::Result {
-    let short_commit = &self.commit[..self.commit.len().min(7)];
-    let dirty_mark = if self.dirty { "*" } else { "" };
-    if !self.tag.is_empty() {
-      write!(
-        f,
-        "{}@{}{} ({})",
-        self.branch, short_commit, dirty_mark, self.tag
-      )
-    } else {
-      write!(f, "{}@{}{}", self.branch, short_commit, dirty_mark)
-    }
-  }
-}
-
+/// Represents a semantic version number with major, minor, and patch components.
+///
+/// Provides a simple and strict `x.y.z` format parser.
+/// Used to represent both package and binary versions.
 #[derive(Debug, Clone, Copy)]
 pub struct Version {
   pub major: u64,
@@ -42,6 +13,10 @@ pub struct Version {
 }
 
 impl Version {
+  /// Parses a version string (e.g., `"1.2.3"`) into a [`Version`] instance.
+  ///
+  /// Returns an error if the string does not follow the three-component format.
+  /// Useful for loading Cargo metadata or versioned configuration files.
   pub fn from_str(s: &str) -> anyhow::Result<Self> {
     let parts: Vec<&str> = s.split('.').collect();
     if parts.len() != 3 {
@@ -66,6 +41,10 @@ impl Version {
   }
 }
 
+/// Holds package information extracted from Cargo build metadata.
+///
+/// Includes name, version, authors, and repository URL.
+/// Typically populated via environment variables set by Cargo.
 #[derive(Debug, Clone)]
 pub struct Package {
   pub name: String,
@@ -75,6 +54,10 @@ pub struct Package {
 }
 
 impl Package {
+  /// Constructs a [`Package`] from Cargo-provided environment variables.
+  ///
+  /// Fails if mandatory fields like `CARGO_PKG_NAME` or `CARGO_PKG_VERSION`
+  /// are missing. Optional fields such as repository URL may default to `"unknown"`.
   pub fn from_env() -> anyhow::Result<Self> {
     let name =
       env::var("CARGO_PKG_NAME").map_err(|_| anyhow::anyhow!("CARGO_PKG_NAME is not set"))?;
@@ -97,6 +80,26 @@ impl Package {
   }
 }
 
+impl fmt::Display for Package {
+  /// Formats the package as `"name vX.Y.Z"`.
+  ///
+  /// Example: `"tebot v1.3.2"`.
+  fn fmt(
+    &self,
+    f: &mut fmt::Formatter<'_>,
+  ) -> fmt::Result {
+    write!(
+      f,
+      "{} v{}.{}.{}",
+      self.name, self.version.major, self.version.minor, self.version.patch,
+    )
+  }
+}
+
+/// Represents metadata from a Git repository at build time.
+///
+/// Includes branch, commit hash, tag, and dirty state.
+/// Typically used for embedding build provenance into binaries.
 #[derive(Debug)]
 pub struct GitMetadata {
   pub branch: String,
@@ -107,6 +110,10 @@ pub struct GitMetadata {
 }
 
 impl GitMetadata {
+  /// Constructs [`GitMetadata`] from environment variables.
+  ///
+  /// Expected variables include `GIT_BRANCH`, `GIT_COMMIT`, and `GIT_DIRTY`.
+  /// Returns an error if any required variable is missing or invalid.
   pub fn from_env() -> anyhow::Result<Self> {
     let branch = env::var("GIT_BRANCH").map_err(|_| anyhow::anyhow!("GIT_BRANCH is not set"))?;
     let commit = env::var("GIT_COMMIT").map_err(|_| anyhow::anyhow!("GIT_COMMIT is not set"))?;
@@ -133,5 +140,27 @@ impl GitMetadata {
       tag,
       repo,
     })
+  }
+}
+
+impl fmt::Display for GitMetadata {
+  /// Formats Git metadata as `"branch@commit(tag)"` with an optional dirty marker.
+  ///
+  /// Example: `"main@a1b2c3d (v1.0.0)"` or `"dev@b3f5a9c*"`.
+  fn fmt(
+    &self,
+    f: &mut fmt::Formatter<'_>,
+  ) -> fmt::Result {
+    let short_commit = &self.commit[..self.commit.len().min(7)];
+    let dirty_mark = if self.dirty { "*" } else { "" };
+    if !self.tag.is_empty() {
+      write!(
+        f,
+        "{}@{}{} ({})",
+        self.branch, short_commit, dirty_mark, self.tag
+      )
+    } else {
+      write!(f, "{}@{}{}", self.branch, short_commit, dirty_mark)
+    }
   }
 }

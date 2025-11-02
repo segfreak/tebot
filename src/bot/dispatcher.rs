@@ -9,22 +9,31 @@ use super::context;
 use super::handler;
 use super::plugin;
 
+/// Dispatcher is responsible for managing command and update handlers.
+///
+/// It holds references to the bot context, registered commands, update handlers,
+/// and loaded plugins. It allows dynamic plugin registration and message/update processing.
 #[derive(Derivative)]
 #[derivative(Debug)]
 pub struct Dispatcher {
+  /// Weak reference to the shared bot context.
   pub context: Weak<Mutex<context::Context>>,
 
+  /// Mapping of command names to their metadata.
   pub command_handlers: IndexMap<String, command::CommandMetadata>,
 
+  /// List of update handlers registered by plugins.
   #[derivative(Debug = "ignore")]
   pub update_handlers: Vec<handler::UpdateHandler>,
 
+  /// Map of loaded plugins by name.
   #[derivative(Debug = "ignore")]
   pub plugins: plugin::PluginMap,
 }
 
 impl Dispatcher {
-  pub fn new(context: Weak<Mutex<super::context::Context>>) -> Self {
+  /// Creates a new [`Dispatcher`] with an empty command set and plugin list.
+  pub fn new(context: Weak<Mutex<context::Context>>) -> Self {
     Self {
       context,
       command_handlers: IndexMap::new(),
@@ -33,12 +42,14 @@ impl Dispatcher {
     }
   }
 
-  pub fn new_shared(
-    context: Weak<Mutex<super::context::Context>>
-  ) -> Arc<tokio::sync::Mutex<Self>> {
-    Arc::new(tokio::sync::Mutex::new(Self::new(context)))
+  /// Creates a shared [`Dispatcher`] wrapped in an `Arc<Mutex<_>>`.
+  pub fn new_shared(context: Weak<Mutex<context::Context>>) -> Arc<Mutex<Self>> {
+    Arc::new(Mutex::new(Self::new(context)))
   }
 
+  /// Registers a plugin with the dispatcher.
+  ///
+  /// This adds the plugin’s update handlers and commands to the dispatcher.
   pub async fn register_plugin(
     &mut self,
     plugin: plugin::PluginBox,
@@ -56,13 +67,15 @@ impl Dispatcher {
         meta.perm,
         plugin_name
       );
-
       self.command_handlers.insert(cmd_name, meta);
     }
 
     self.plugins.insert(plugin_name.clone(), plugin);
   }
 
+  /// Handles a command invocation by a user.
+  ///
+  /// Checks permissions and executes the associated command handler if allowed.
   pub async fn handle_command(
     &self,
     bot: teloxide::Bot,
@@ -108,6 +121,10 @@ impl Dispatcher {
     Ok(())
   }
 
+  /// Handles a message update by checking if it matches a command.
+  ///
+  /// If the message text or caption starts with a recognized prefix,
+  /// it will be parsed as a command.
   pub async fn handle_message(
     &self,
     bot: teloxide::Bot,
@@ -143,6 +160,10 @@ impl Dispatcher {
     Ok(())
   }
 
+  /// Handles a full update from Telegram.
+  ///
+  /// All update handlers are executed first. If the update contains a message,
+  /// it will be processed for commands.
   pub async fn handle_update(
     &self,
     bot: teloxide::Bot,
@@ -152,7 +173,7 @@ impl Dispatcher {
       if self.context.upgrade().is_some() {
         (handler)(bot.clone(), update.clone(), self.context.clone()).await;
       } else {
-        anyhow::bail!("cannot handle message: context already destroyed");
+        anyhow::bail!("cannot handle update: context already destroyed");
       }
     }
 
