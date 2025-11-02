@@ -5,7 +5,7 @@ use tokio::sync::Mutex;
 use r2d2::Pool;
 use r2d2_sqlite::SqliteConnectionManager;
 
-use crate::utils::style::{self, DynStyle};
+use crate::utils::style::DynStyle;
 
 use super::config::Config;
 use super::dispatcher::Dispatcher;
