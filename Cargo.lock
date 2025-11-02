@@ -178,9 +178,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.5.49"
+version = "4.5.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4512b90fa68d3a9932cea5184017c5d200f5921df706d45e853537dea51508f"
+checksum = "4c26d721170e0295f191a69bd9a1f93efcdb0aff38684b61ab5750468972e5f5"
 dependencies = [
  "clap_builder",
  "clap_derive",
@@ -188,9 +188,9 @@ dependencies = [
 
 [[package]]
 name = "clap_builder"
-version = "4.5.49"
+version = "4.5.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0025e98baa12e766c67ba13ff4695a887a1eba19569aad00a472546795bd6730"
+checksum = "75835f0c7bf681bfd05abe44e965760fea999a5286c6eb2d59883634fd02011a"
 dependencies = [
  "anstream",
  "anstyle",
@@ -372,6 +372,12 @@ dependencies = [
  "log",
  "regex",
 ]
+
+[[package]]
+name = "env_home"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7f84e12ccf0a7ddc17a6c41c93326024c42920d7ee630d04950e6926645c0fe"
 
 [[package]]
 name = "env_logger"
@@ -1871,12 +1877,13 @@ checksum = "20f34339676cdcab560c9a82300c4c2581f68b9369aedf0fae86f2ff9565ff3e"
 
 [[package]]
 name = "tebot"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "anyhow",
  "async-recursion",
  "bitflags",
  "chrono",
+ "clap",
  "derivative",
  "dotenvy",
  "env_logger",
@@ -1893,6 +1900,7 @@ dependencies = [
  "teloxide",
  "thiserror",
  "tokio",
+ "which",
 ]
 
 [[package]]
@@ -2338,6 +2346,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "which"
+version = "8.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d3fabb953106c3c8eea8306e4393700d7657561cb43122571b172bbfb7c7ba1d"
+dependencies = [
+ "env_home",
+ "rustix",
+ "winsafe",
+]
+
+[[package]]
 name = "winapi"
 version = "0.3.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2662,6 +2681,12 @@ name = "windows_x86_64_msvc"
 version = "0.53.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6bbff5f0aada427a1e5a6da5f1f98158182f26556f345ac9e04d36d0ebed650"
+
+[[package]]
+name = "winsafe"
+version = "0.0.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d135d17ab770252ad95e9a872d365cf3090e3be864a34ab46f48555993efc904"
 
 [[package]]
 name = "wit-bindgen"
